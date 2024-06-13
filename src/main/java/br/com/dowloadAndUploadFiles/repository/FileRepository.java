@@ -9,6 +9,6 @@ import java.util.List;
 @Repository
 public interface FileRepository extends JpaRepository<File, Long> {
 
-    List<File> listFilesByName(String name);
-    void deleteFileByName(String name);
+    List<File> listByName(String name);
+    void deleteByName(String name);
 }
