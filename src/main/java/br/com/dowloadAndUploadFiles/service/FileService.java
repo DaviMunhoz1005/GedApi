@@ -22,7 +22,7 @@ public class FileService {
 
     public List<File> listFilesByName(String name) {
 
-        return fileRepository.listByName(name);
+        return fileRepository.findByName(name);
     }
 
     @Transactional
