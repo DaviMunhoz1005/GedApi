@@ -1,5 +1,11 @@
 package br.com.dowloadAndUploadFiles.controller;
 
+
+
+import br.com.dowloadAndUploadFiles.service.FileService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import br.com.dowloadAndUploadFiles.dto.FileDto;
 import br.com.dowloadAndUploadFiles.entities.File;
 import br.com.dowloadAndUploadFiles.service.FileService;
