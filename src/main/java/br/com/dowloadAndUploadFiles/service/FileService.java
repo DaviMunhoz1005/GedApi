@@ -34,8 +34,6 @@ public class FileService {
                 .validity(fileDto.validity())
                 .build();
 
-        String nameNewFile = fileToSave.getName();
-
         List<File> fileListWithThisName = listFilesByName(fileToSave.getName());
 
         if(!fileListWithThisName.isEmpty()) {
@@ -60,17 +58,24 @@ public class FileService {
     @Transactional
     public File updateFile(FileDto fileDto) {
 
+        if (fileDto.name() == null || fileDto.name().isEmpty()) {
+            throw new IllegalArgumentException("The 'name' field cannot be empty");
+        }
+
         List<File> listFiles = listFilesByName(fileDto.name());
-        int indexNumberPreviousFile = listFiles.size();
-        File previusFile = listFiles.get(indexNumberPreviousFile - 1);
 
-        File currentDocument = File.builder()
-                .name(fileDto.name())
-                .version(previusFile.getVersion() + 1)
-                .validity(fileDto.validity() != null ? fileDto.validity() : previusFile.getValidity())
-                .build();
+        if (listFiles.isEmpty()) {
+            throw new IllegalArgumentException("No files found with the specified name: " + fileDto.name());
+        }
 
-        return fileRepository.save(currentDocument);
+        File previousFile = listFiles.get(listFiles.size() - 1);
+
+        previousFile.setVersion(previousFile.getVersion() + 1);
+        if (fileDto.validity() != null) {
+            previousFile.setValidity(fileDto.validity());
+        }
+
+        return fileRepository.save(previousFile);
     }
 
     @Transactional
