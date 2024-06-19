@@ -24,8 +24,6 @@ public class FileService {
     private final FileRepository fileRepository;
     private final Path fileStorageLocation;
 
-    //TODO - Atualizar método updateFile, deleteFileById e deleteFileByName
-
     public FileService(FileRepository fileRepository, FileStorageProperties fileStorageProperties) {
         this.fileRepository = fileRepository;
         this.fileStorageLocation = Paths.get(fileStorageProperties.getUploadDirectory())
@@ -72,8 +70,10 @@ public class FileService {
             } while(!fileListWithThisName.isEmpty());
         }
 
-         Files.createDirectories(fileStorageLocation);
-        Path destinationFile = fileStorageLocation.resolve(Paths.get(fileName)).normalize().toAbsolutePath();
+        Files.createDirectories(fileStorageLocation);
+        Path destinationFile = fileStorageLocation.resolve(Paths.get(fileToSave.getName()))
+                .normalize()
+                .toAbsolutePath();
 
         multipartFile.transferTo(destinationFile);
 
@@ -81,16 +81,18 @@ public class FileService {
     }
 
     @Transactional
-    public File updateFile(String name, FileDto fileDto) {
+    public File updateFile(MultipartFile multipartFile, FileDto fileDto) throws IOException {
 
-        if (name.isEmpty()) {
+        String fileName = StringUtils.cleanPath(Objects.requireNonNull(multipartFile.getOriginalFilename()));
+
+        if (fileName.isEmpty()) {
             throw new IllegalArgumentException("The 'name' field cannot be empty");
         }
 
-        List<File> listFiles = listFilesByName(name);
+        List<File> listFiles = listFilesByName(fileName);
 
         if (listFiles.isEmpty()) {
-            throw new IllegalArgumentException("No files found with the specified name: " + name);
+            throw new IllegalArgumentException("No files found with the specified name: " + fileName);
         }
 
         File previousFile = listFiles.get(listFiles.size() - 1);
@@ -100,11 +102,32 @@ public class FileService {
             previousFile.setValidity(fileDto.validity());
         }
 
+        Files.createDirectories(fileStorageLocation);
+        Path destinationFile = fileStorageLocation.resolve(fileName).normalize().toAbsolutePath();
+
+        multipartFile.transferTo(destinationFile);
+
+        previousFile.setName(fileName);
+
         return fileRepository.save(previousFile);
     }
 
     @Transactional
     public void deleteFileById(Long id) {
+
+        File file = fileRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException
+                        (("File not found with the specified ID:" + id)));
+
+        Path filePath = fileStorageLocation.resolve(file.getName()).normalize().toAbsolutePath();
+        try {
+
+            Files.deleteIfExists(filePath);
+        }catch(IOException ioexception) {
+
+            throw new RuntimeException
+                    ("Error deleting file from file system: " + file.getName(), ioexception);
+        }
 
         fileRepository.deleteById(id);
     }
@@ -112,6 +135,26 @@ public class FileService {
     @Transactional
     public void deleteFileByName(String name) {
 
-        fileRepository.deleteByName(name);
+        List<File> listFiles = listFilesByName(name);
+
+        if (listFiles.isEmpty()) {
+            throw new IllegalArgumentException("No files found with the specified name: " + name);
+        }
+
+        for (File file : listFiles) {
+
+            Path filePath = fileStorageLocation.resolve(file.getName()).normalize().toAbsolutePath();
+
+            try {
+
+                Files.deleteIfExists(filePath);
+            }catch(IOException ioexception) {
+
+                throw new RuntimeException
+                        ("Error deleting file from file system: " + file.getName(), ioexception);
+            }
+
+            fileRepository.deleteById(file.getId());
+        }
     }
 }
