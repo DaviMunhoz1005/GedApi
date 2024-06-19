@@ -1,7 +1,5 @@
 package br.com.dowloadAndUploadFiles.controller;
 
-
-
 import br.com.dowloadAndUploadFiles.service.FileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,6 +20,8 @@ public class FileController {
 
     private final FileService fileService;
 
+    //TODO - Atualizar método addNewFile, updateFile, deleteFileById e deleteFileByName
+
     @GetMapping
     public ResponseEntity<List<File>> listFiles() {
 
@@ -41,9 +41,9 @@ public class FileController {
     }
 
     @PutMapping
-    public ResponseEntity<File> updateFile(@Valid @RequestBody FileDto fileDto) {
+    public ResponseEntity<File> updateFile(@Valid @RequestParam String name, @RequestBody FileDto fileDto) {
 
-        return new ResponseEntity<>(fileService.updateFile(fileDto), HttpStatus.OK);
+        return new ResponseEntity<>(fileService.updateFile(name, fileDto), HttpStatus.OK);
     }
 
     @DeleteMapping(path = "{id}")
