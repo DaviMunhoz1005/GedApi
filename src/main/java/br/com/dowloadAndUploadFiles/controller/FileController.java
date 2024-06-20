@@ -10,7 +10,9 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -19,8 +21,6 @@ import java.util.List;
 public class FileController {
 
     private final FileService fileService;
-
-    //TODO - Atualizar método addNewFile, updateFile, deleteFileById e deleteFileByName
 
     @GetMapping
     public ResponseEntity<List<File>> listFiles() {
@@ -34,16 +34,20 @@ public class FileController {
         return new ResponseEntity<>(fileService.listFilesByName(name), HttpStatus.OK);
     }
 
-    @PostMapping
-    public ResponseEntity<File> addNewFile(@Valid @RequestBody FileDto fileDto) {
+    @PostMapping(path = "upload", consumes = {"multipart/form-data"})
+    public ResponseEntity<File> addNewFile(@Valid @RequestPart("file") MultipartFile file,
+                                           @RequestPart("json") FileDto fileDto) throws IOException {
 
-        return new ResponseEntity<>(fileService.addNewFile(fileDto), HttpStatus.CREATED);
+        fileService.addNewFile(file, fileDto);
+
+        return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
-    @PutMapping
-    public ResponseEntity<File> updateFile(@Valid @RequestParam String name, @RequestBody FileDto fileDto) {
+    @PutMapping(path = "upload", consumes = {"multipart/form-data"})
+    public ResponseEntity<File> updateFile(@Valid @RequestPart("file") MultipartFile file,
+                                           @RequestPart("json") FileDto fileDto) throws IOException {
 
-        return new ResponseEntity<>(fileService.updateFile(name, fileDto), HttpStatus.OK);
+        return new ResponseEntity<>(fileService.updateFile(file, fileDto), HttpStatus.OK);
     }
 
     @DeleteMapping(path = "{id}")
