@@ -10,5 +10,4 @@ import java.util.List;
 public interface FileRepository extends JpaRepository<File, Long> {
 
     List<File> findByName(String name);
-    void deleteByName(String name);
 }

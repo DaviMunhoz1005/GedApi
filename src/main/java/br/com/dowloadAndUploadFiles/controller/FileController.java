@@ -1,21 +1,21 @@
 package br.com.dowloadAndUploadFiles.controller;
 
-
-
 import br.com.dowloadAndUploadFiles.service.FileService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 import br.com.dowloadAndUploadFiles.dto.FileDto;
 import br.com.dowloadAndUploadFiles.entities.File;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
-@RestController
+@Controller
 @RequestMapping("/file")
 @RequiredArgsConstructor
 public class FileController {
@@ -34,16 +34,20 @@ public class FileController {
         return new ResponseEntity<>(fileService.listFilesByName(name), HttpStatus.OK);
     }
 
-    @PostMapping
-    public ResponseEntity<File> addNewFile(@Valid @RequestBody FileDto fileDto) {
+    @PostMapping(path = "upload", consumes = "multipart/form-data")
+    public ResponseEntity<String> addNewFile(@RequestPart("file") MultipartFile file,
+                                             @RequestPart("fileDto") FileDto fileDto) throws IOException {
 
-        return new ResponseEntity<>(fileService.addNewFile(fileDto), HttpStatus.CREATED);
+        fileService.addNewFile(file, fileDto);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body("Arquivo e JSON recebidos com sucesso!");
     }
 
-    @PutMapping
-    public ResponseEntity<File> updateFile(@Valid @RequestBody FileDto fileDto) {
+    @PutMapping(path = "upload", consumes = {"multipart/form-data"})
+    public ResponseEntity<File> updateFile(@Valid @RequestPart("file") MultipartFile file,
+                                           @RequestPart("json") FileDto fileDto) throws IOException {
 
-        return new ResponseEntity<>(fileService.updateFile(fileDto), HttpStatus.OK);
+        return new ResponseEntity<>(fileService.updateFile(file, fileDto), HttpStatus.OK);
     }
 
     @DeleteMapping(path = "{id}")
