@@ -5,7 +5,7 @@ import br.com.dowloadAndUploadFiles.dto.FileDto;
 import br.com.dowloadAndUploadFiles.entities.File;
 import br.com.dowloadAndUploadFiles.repository.FileRepository;
 import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,14 +18,29 @@ import java.util.List;
 import java.util.Objects;
 
 @Service
-@RequiredArgsConstructor
 public class FileService {
 
     private final FileRepository fileRepository;
+    private final FileStorageProperties fileStorageProperties;
     private final Path fileStorageLocation;
 
+    /*
+
+    TODO - modificar método de adicionar novo arquivo para pegar apenas o nome do arquivo (sem .txt, .pdf, etc);
+    TODO - checar a lógica de manter o arquivo de versão anterior;
+
+     */
+
+    public FileService() {
+        this.fileRepository = null;
+        this.fileStorageProperties = null;
+        this.fileStorageLocation = null;
+    }
+
+    @Autowired
     public FileService(FileRepository fileRepository, FileStorageProperties fileStorageProperties) {
         this.fileRepository = fileRepository;
+        this.fileStorageProperties = fileStorageProperties;
         this.fileStorageLocation = Paths.get(fileStorageProperties.getUploadDirectory())
                 .toAbsolutePath()
                 .normalize();
@@ -52,24 +67,20 @@ public class FileService {
                 .validity(fileDto.validity())
                 .build();
 
-        List<File> fileListWithThisName = listFilesByName(fileToSave.getName());
+        List<File> fileListWithThisName = fileRepository.findByName(fileToSave.getName());
 
-        if(!fileListWithThisName.isEmpty()) {
-
+        if (!fileListWithThisName.isEmpty()) {
             int indexToAddToTheNameToDifferentiateIt = 1;
-
             do {
-
                 String numberToAdd = String.valueOf(indexToAddToTheNameToDifferentiateIt);
-                String newNameWithIndexedNumber =  fileToSave.getName() + "_" + numberToAdd;
-
+                String newNameWithIndexedNumber = fileToSave.getName() + "_" + numberToAdd;
                 fileToSave.setName(newNameWithIndexedNumber);
-                fileListWithThisName = listFilesByName(fileToSave.getName());
-
+                fileListWithThisName = fileRepository.findByName(fileToSave.getName());
                 indexToAddToTheNameToDifferentiateIt++;
-            } while(!fileListWithThisName.isEmpty());
+            } while (!fileListWithThisName.isEmpty());
         }
 
+        Path fileStorageLocation = fileStorageProperties.getFileStorageLocation();
         Files.createDirectories(fileStorageLocation);
         Path destinationFile = fileStorageLocation.resolve(Paths.get(fileToSave.getName()))
                 .normalize()
