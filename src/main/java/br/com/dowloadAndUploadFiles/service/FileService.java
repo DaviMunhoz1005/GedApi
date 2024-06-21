@@ -27,7 +27,7 @@ public class FileService {
     /*
 
     TODO - modificar método de adicionar novo arquivo para pegar apenas o nome do arquivo (sem .txt, .pdf, etc);
-    TODO - checar a lógica de manter o arquivo de versão anterior;
+    TODO - corrigir método de modificar o nome caso esteja fazendo um POST de um nome já existente;
 
      */
 
@@ -108,19 +108,18 @@ public class FileService {
 
         File previousFile = listFiles.get(listFiles.size() - 1);
 
-        previousFile.setVersion(previousFile.getVersion() + 1);
-        if (fileDto.validity() != null) {
-            previousFile.setValidity(fileDto.validity());
-        }
-
         Files.createDirectories(fileStorageLocation);
         Path destinationFile = fileStorageLocation.resolve(fileName).normalize().toAbsolutePath();
 
         multipartFile.transferTo(destinationFile);
 
-        previousFile.setName(fileName);
+        File fileToSave = File.builder()
+                .name(previousFile.getName())
+                .version(previousFile.getVersion() + 1)
+                .validity(fileDto.validity() != null ? fileDto.validity() : previousFile.getValidity())
+                .build();
 
-        return fileRepository.save(previousFile);
+        return fileRepository.save(fileToSave);
     }
 
     @Transactional
