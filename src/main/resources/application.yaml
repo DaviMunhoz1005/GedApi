@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: DownloadAndUploadAPI
+
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+  jackson:
+    time-zone: UTC
+
+  datasource:
+    url: jdbc:mysql://localhost/api_files?useTimezone=true&serverTimezone=UTC
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+server:
+  error:
+    include-stacktrace: never
+  port: 8080
+
+file:
+  upload-directory: uploads
+
+logging:
+  level:
+    org:
+      hibernate:
+        SQL: DEBUG
+        type:
+          descriptor:
+            sql:
+              BasicBinder: TRACE
