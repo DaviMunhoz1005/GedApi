@@ -22,6 +22,9 @@ public class File {
     @NotNull(message = "The field name cannot be empty")
     private String name;
 
+    @NotNull(message = "The field extension cannot be empty")
+    private String extension;
+
     @NotNull(message = "The field version cannot be empty")
     private Integer version;
 

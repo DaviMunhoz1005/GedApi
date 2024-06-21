@@ -5,6 +5,7 @@ import br.com.dowloadAndUploadFiles.dto.FileDto;
 import br.com.dowloadAndUploadFiles.entities.File;
 import br.com.dowloadAndUploadFiles.repository.FileRepository;
 import jakarta.transaction.Transactional;
+import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -26,8 +27,8 @@ public class FileService {
 
     /*
 
-    TODO - modificar método de adicionar novo arquivo para pegar apenas o nome do arquivo (sem .txt, .pdf, etc);
     TODO - corrigir método de modificar o nome caso esteja fazendo um POST de um nome já existente;
+    TODO - fazer método para fazer download;
 
      */
 
@@ -59,10 +60,16 @@ public class FileService {
     @Transactional
     public void addNewFile(MultipartFile multipartFile, FileDto fileDto) throws IOException {
 
-        String fileName = StringUtils.cleanPath(Objects.requireNonNull(multipartFile.getOriginalFilename()));
+        String originalFileName = StringUtils.cleanPath(
+                Objects.requireNonNull(multipartFile.getOriginalFilename())
+        );
+
+        String baseName = FilenameUtils.getBaseName(originalFileName);
+        String extension = FilenameUtils.getExtension(originalFileName);
 
         File fileToSave = File.builder()
-                .name(fileName)
+                .name(baseName)
+                .extension(extension)
                 .version(1)
                 .validity(fileDto.validity())
                 .build();
@@ -82,7 +89,7 @@ public class FileService {
 
         Path fileStorageLocation = fileStorageProperties.getFileStorageLocation();
         Files.createDirectories(fileStorageLocation);
-        Path destinationFile = fileStorageLocation.resolve(Paths.get(fileToSave.getName()))
+        Path destinationFile = fileStorageLocation.resolve(Paths.get(originalFileName))
                 .normalize()
                 .toAbsolutePath();
 
@@ -153,7 +160,8 @@ public class FileService {
 
         for (File file : listFiles) {
 
-            Path filePath = fileStorageLocation.resolve(file.getName()).normalize().toAbsolutePath();
+            String originalFileName = file.getName() + "." + file.getExtension();
+            Path filePath = fileStorageLocation.resolve(originalFileName).normalize().toAbsolutePath();
 
             try {
 
@@ -161,7 +169,7 @@ public class FileService {
             }catch(IOException ioexception) {
 
                 throw new RuntimeException
-                        ("Error deleting file from file system: " + file.getName(), ioexception);
+                        ("Error deleting file from file system: " + originalFileName, ioexception);
             }
 
             fileRepository.deleteById(file.getId());
