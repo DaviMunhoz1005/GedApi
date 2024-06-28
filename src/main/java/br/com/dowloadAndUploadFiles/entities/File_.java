@@ -13,7 +13,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @Table(name = "TB_FILE")
 @Builder
-public class File {
+public class File_ {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

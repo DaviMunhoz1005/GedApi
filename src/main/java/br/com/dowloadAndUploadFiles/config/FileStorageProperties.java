@@ -11,7 +11,8 @@ import java.nio.file.Paths;
 
 @Configuration
 @ConfigurationProperties(prefix = "file")
-@Getter @Setter
+@Getter
+@Setter
 public class FileStorageProperties {
 
     private String uploadDirectory;
