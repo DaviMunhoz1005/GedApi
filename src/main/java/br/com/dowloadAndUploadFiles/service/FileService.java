@@ -136,7 +136,9 @@ public class FileService {
                 .orElseThrow(() -> new IllegalArgumentException
                         (("File not found with the specified ID:" + id)));
 
-        Path filePath = fileStorageLocation.resolve(file.getName()).normalize().toAbsolutePath();
+        String originalFileName = file.getName() + "." + file.getExtension();
+
+        Path filePath = fileStorageLocation.resolve(originalFileName).normalize().toAbsolutePath();
         try {
 
             Files.deleteIfExists(filePath);
