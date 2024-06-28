@@ -69,29 +69,14 @@ public class FileService {
         String baseName = FilenameUtils.getBaseName(originalFileName);
         String extension = FilenameUtils.getExtension(originalFileName);
 
+        String newNameIfAlreadyExists = modifyNameIfAlreadyExisting(baseName);
+
         File_ fileToSave = File_.builder()
-                .name(baseName)
+                .name(newNameIfAlreadyExists)
                 .extension(extension)
                 .version(1)
                 .validity(fileDto.validity())
                 .build();
-
-        List<File_> fileListWithThisName = fileRepository.findByName(fileToSave.getName());
-
-        if (!fileListWithThisName.isEmpty()) {
-
-            int indexToAddToTheName = 1;
-            do {
-
-                String numberToAdd = String.valueOf(indexToAddToTheName);
-                String newNameWithIndexedNumber = fileToSave.getName() + "_" + numberToAdd;
-
-                fileToSave.setName(newNameWithIndexedNumber);
-                fileListWithThisName = fileRepository.findByName(fileToSave.getName());
-
-                indexToAddToTheName++;
-            } while (!fileListWithThisName.isEmpty());
-        }
 
         Path fileStorageLocation = fileStorageProperties.getFileStorageLocation();
         Files.createDirectories(fileStorageLocation);
@@ -102,6 +87,32 @@ public class FileService {
 
         multipartFile.transferTo(destinationFile);
         fileRepository.save(fileToSave);
+    }
+
+    public String modifyNameIfAlreadyExisting(String name) {
+
+        List<File_> fileListWithThisName = fileRepository.findByName(name);
+        String finalName;
+
+        if (!fileListWithThisName.isEmpty()) {
+
+            int indexToAddToTheName = 1;
+            do {
+
+                String numberToAdd = String.valueOf(indexToAddToTheName);
+                String newNameWithIndexedNumber = name + "_" + numberToAdd;
+
+                fileListWithThisName = fileRepository.findByName(newNameWithIndexedNumber);
+                finalName = newNameWithIndexedNumber;
+
+                indexToAddToTheName++;
+            } while (!fileListWithThisName.isEmpty());
+
+            return finalName;
+        } else {
+
+            return name;
+        }
     }
 
     @Transactional
