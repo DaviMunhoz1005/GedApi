@@ -1,18 +1,24 @@
 package br.com.dowloadAndUploadFiles.controller;
 
 import br.com.dowloadAndUploadFiles.service.FileService;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+
 import br.com.dowloadAndUploadFiles.dto.FileDto;
-import br.com.dowloadAndUploadFiles.entities.File;
+import br.com.dowloadAndUploadFiles.entities.File_;
+
 import jakarta.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+
 import java.util.List;
 
 @Controller
@@ -22,14 +28,20 @@ public class FileController {
 
     private final FileService fileService;
 
+    /*
+
+    TODO - fazer controller do download;
+
+    */
+
     @GetMapping
-    public ResponseEntity<List<File>> listFiles() {
+    public ResponseEntity<List<File_>> listFiles() {
 
         return new ResponseEntity<>(fileService.listAllFiles(), HttpStatus.OK);
     }
 
     @GetMapping(path = "param")
-    public ResponseEntity<List<File>> listFilesByName(@Valid @RequestParam String name) {
+    public ResponseEntity<List<File_>> listFilesByName(@Valid @RequestParam String name) {
 
         return new ResponseEntity<>(fileService.listFilesByName(name), HttpStatus.OK);
     }
@@ -44,8 +56,8 @@ public class FileController {
     }
 
     @PutMapping(path = "upload", consumes = {"multipart/form-data"})
-    public ResponseEntity<File> updateFile(@Valid @RequestPart("file") MultipartFile file,
-                                           @RequestPart("json") FileDto fileDto) throws IOException {
+    public ResponseEntity<File_> updateFile(@Valid @RequestPart("file") MultipartFile file,
+                                            @RequestPart("json") FileDto fileDto) throws IOException {
 
         return new ResponseEntity<>(fileService.updateFile(file, fileDto), HttpStatus.OK);
     }
