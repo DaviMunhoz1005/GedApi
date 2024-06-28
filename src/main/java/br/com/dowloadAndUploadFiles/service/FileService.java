@@ -4,18 +4,21 @@ import br.com.dowloadAndUploadFiles.config.FileStorageProperties;
 import br.com.dowloadAndUploadFiles.dto.FileDto;
 import br.com.dowloadAndUploadFiles.entities.File_;
 import br.com.dowloadAndUploadFiles.repository.FileRepository;
+
 import jakarta.transaction.Transactional;
+
 import org.apache.commons.io.FilenameUtils;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
 import java.util.List;
 import java.util.Objects;
 
