@@ -35,7 +35,7 @@ public class FileController {
 
     /*
 
-    TODO - fazer com que retorne o novo nome do arquivo caso ele tenha sido modificado no POST;
+    TODO -
 
     */
 
@@ -55,9 +55,10 @@ public class FileController {
     public ResponseEntity<String> addNewFile(@RequestPart("file") MultipartFile file,
                                              @RequestPart("fileDto") FileDto fileDto) throws IOException {
 
-        fileService.addNewFile(file, fileDto);
+        String fileName = fileService.addNewFile(file, fileDto);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body("Arquivo e JSON recebidos com sucesso!");
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body("Arquivo e JSON recebidos com sucesso, nome do arquivo foi salvo como: " + fileName);
     }
 
     @PutMapping(path = "upload", consumes = {"multipart/form-data"})

@@ -34,7 +34,7 @@ public class FileService {
 
     /*
 
-    TODO - fazer com que retorne o novo nome do arquivo caso ele tenha sido modificado no POST;
+    TODO -
 
      */
 
@@ -66,7 +66,7 @@ public class FileService {
     }
 
     @Transactional
-    public void addNewFile(MultipartFile multipartFile, FileDto fileDto) throws IOException {
+    public String addNewFile(MultipartFile multipartFile, FileDto fileDto) throws IOException {
 
         String originalFileName = StringUtils.cleanPath(
                 Objects.requireNonNull(multipartFile.getOriginalFilename())
@@ -93,6 +93,8 @@ public class FileService {
 
         multipartFile.transferTo(destinationFile);
         fileRepository.save(fileToSave);
+
+        return fileToSave.getName();
     }
 
     public String modifyNameIfAlreadyExisting(String name) {
