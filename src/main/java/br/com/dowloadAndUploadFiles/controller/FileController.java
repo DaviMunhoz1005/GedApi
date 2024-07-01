@@ -35,7 +35,7 @@ public class FileController {
 
     /*
 
-    TODO - fazer controller do download;
+    TODO - fazer com que retorne o novo nome do arquivo caso ele tenha sido modificado no POST;
 
     */
 
@@ -65,6 +65,31 @@ public class FileController {
                                             @RequestPart("json") FileDto fileDto) throws IOException {
 
         return new ResponseEntity<>(fileService.updateFile(file, fileDto), HttpStatus.OK);
+    }
+
+    @GetMapping(path = "download/{fileName:.+}")
+    public ResponseEntity<Resource> downloadFile(@PathVariable String fileName,
+                                                 HttpServletRequest httpServletRequest) {
+        try {
+
+            Resource resource = fileService.downloadFile(fileName);
+
+            String contentType = httpServletRequest.getServletContext()
+                    .getMimeType(resource.getFile().getAbsolutePath());
+
+            if (contentType == null) {
+
+                contentType = "application/octet-stream";
+            }
+
+            return ResponseEntity.ok().contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + resource.getFilename() + "\"")
+                    .body(resource);
+        } catch(Exception ex) {
+
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
     }
 
     @DeleteMapping(path = "{id}")

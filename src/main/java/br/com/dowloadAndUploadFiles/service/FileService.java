@@ -34,7 +34,7 @@ public class FileService {
 
     /*
 
-    TODO - fazer método para fazer download;
+    TODO - fazer com que retorne o novo nome do arquivo caso ele tenha sido modificado no POST;
 
      */
 
@@ -157,6 +157,13 @@ public class FileService {
                 .build();
 
         return fileRepository.save(fileToSave);
+    }
+
+    @Transactional
+    public Resource downloadFile(String fileName) throws MalformedURLException {
+
+        Path filePath = fileStorageLocation.resolve(fileName).normalize();
+        return new UrlResource(filePath.toUri());
     }
 
     @Transactional
