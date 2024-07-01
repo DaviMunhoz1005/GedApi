@@ -10,11 +10,14 @@ import jakarta.transaction.Transactional;
 import org.apache.commons.io.FilenameUtils;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -121,29 +124,34 @@ public class FileService {
     @Transactional
     public File_ updateFile(MultipartFile multipartFile, FileDto fileDto) throws IOException {
 
-        String fileName = StringUtils.cleanPath(Objects.requireNonNull(multipartFile.getOriginalFilename()));
+        String originalFileName = StringUtils.cleanPath(
+                Objects.requireNonNull(multipartFile.getOriginalFilename())
+        );
 
-        if (fileName.isEmpty()) {
+        String baseName = FilenameUtils.getBaseName(originalFileName);
+
+        if (originalFileName.isEmpty()) {
 
             throw new IllegalArgumentException("The 'name' field cannot be empty");
         }
 
-        List<File_> listFiles = listFilesByName(fileName);
+        List<File_> listFiles = listFilesByName(baseName);
 
         if (listFiles.isEmpty()) {
 
-            throw new IllegalArgumentException("No files found with the specified name: " + fileName);
+            throw new IllegalArgumentException("No files found with the specified name: " + baseName);
         }
 
         File_ previousFile = listFiles.get(listFiles.size() - 1);
 
         Files.createDirectories(fileStorageLocation);
-        Path destinationFile = fileStorageLocation.resolve(fileName).normalize().toAbsolutePath();
+        Path destinationFile = fileStorageLocation.resolve(originalFileName).normalize().toAbsolutePath();
 
         multipartFile.transferTo(destinationFile);
 
         File_ fileToSave = File_.builder()
                 .name(previousFile.getName())
+                .extension(previousFile.getExtension())
                 .version(previousFile.getVersion() + 1)
                 .validity(fileDto.validity() != null ? fileDto.validity() : previousFile.getValidity())
                 .build();

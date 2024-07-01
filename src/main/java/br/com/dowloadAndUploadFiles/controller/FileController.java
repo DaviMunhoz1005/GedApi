@@ -2,8 +2,12 @@ package br.com.dowloadAndUploadFiles.controller;
 
 import br.com.dowloadAndUploadFiles.service.FileService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -19,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 
+import java.net.MalformedURLException;
 import java.util.List;
 
 @Controller
