@@ -1,9 +1,9 @@
-package br.com.dowloadAndUploadFiles.service;
+package br.com.api.service;
 
-import br.com.dowloadAndUploadFiles.config.FileStorageProperties;
-import br.com.dowloadAndUploadFiles.dto.FileDto;
-import br.com.dowloadAndUploadFiles.entities.File_;
-import br.com.dowloadAndUploadFiles.repository.FileRepository;
+import br.com.api.config.FileStorageProperties;
+import br.com.api.dto.FileDto;
+import br.com.api.entities.File_;
+import br.com.api.repository.FileRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -31,12 +31,6 @@ public class FileService {
     private final FileRepository fileRepository;
     private final FileStorageProperties fileStorageProperties;
     private final Path fileStorageLocation;
-
-    /*
-
-    TODO -
-
-     */
 
     public FileService() {
 

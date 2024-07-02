@@ -1,4 +1,4 @@
-package br.com.dowloadAndUploadFiles.config;
+package br.com.api.config;
 
 import lombok.Getter;
 import lombok.Setter;

@@ -1,4 +1,4 @@
-package br.com.dowloadAndUploadFiles.entities;
+package br.com.api.entities;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;

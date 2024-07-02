@@ -1,6 +1,6 @@
-package br.com.dowloadAndUploadFiles.controller;
+package br.com.api.controller;
 
-import br.com.dowloadAndUploadFiles.service.FileService;
+import br.com.api.service.FileService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -11,8 +11,8 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import br.com.dowloadAndUploadFiles.dto.FileDto;
-import br.com.dowloadAndUploadFiles.entities.File_;
+import br.com.api.dto.FileDto;
+import br.com.api.entities.File_;
 
 import jakarta.validation.Valid;
 
@@ -31,12 +31,6 @@ import java.util.List;
 public class FileController {
 
     private final FileService fileService;
-
-    /*
-
-    TODO -
-
-    */
 
     @GetMapping
     public ResponseEntity<List<File_>> listFiles() {

@@ -1,6 +1,6 @@
-package br.com.dowloadAndUploadFiles.repository;
+package br.com.api.repository;
 
-import br.com.dowloadAndUploadFiles.entities.File_;
+import br.com.api.entities.File_;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

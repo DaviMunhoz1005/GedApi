@@ -1,4 +1,4 @@
-package br.com.dowloadAndUploadFiles.dto;
+package br.com.api.dto;
 
 import jakarta.validation.constraints.NotNull;
 
