@@ -1,6 +1,9 @@
 package br.com.api.handler;
 
-import br.com.api.exception.*;
+import br.com.api.exception.BadRequestException;
+import br.com.api.exception.BadRequestExceptionDetails;
+import br.com.api.exception.ExceptionDetails;
+import br.com.api.exception.ValidationExceptionDetails;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -14,28 +17,27 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @ControllerAdvice
-public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    /*
-
-    TODO - adicionar para lidar com o statusCode 500 INTERNAL_SERVER_ERROR
-
-    */
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    LocalDateTime localDateTime = LocalDateTime.now();
+    String formattedTime = localDateTime.format(formatter);
 
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<BadRequestExceptionDetails> handleBadRequestException(BadRequestException exception) {
 
         return new ResponseEntity<>(
                 BadRequestExceptionDetails.builder()
-                .title("Bad Request Exception")
-                .statusCode(HttpStatus.BAD_REQUEST.value())
-                .cause(exception.getMessage())
-                .timestamp(LocalDateTime.now())
-                .build(), HttpStatus.BAD_REQUEST);
+                        .title("Bad Request Exception")
+                        .statusCode(HttpStatus.BAD_REQUEST.value())
+                        .cause(exception.getMessage())
+                        .timestamp(formattedTime)
+                        .build(), HttpStatus.BAD_REQUEST);
     }
 
     @Override
@@ -54,7 +56,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
                         .fields(fields)
                         .fieldsMessage(fieldsMessage)
                         .cause("Check the fields")
-                        .timestamp(LocalDateTime.now())
+                        .timestamp(formattedTime)
                         .build(), HttpStatus.BAD_REQUEST);
     }
 
@@ -68,7 +70,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
                         .title("Bad Request Exception, invalid field")
                         .statusCode(status.value())
                         .cause(exception.getMessage())
-                        .timestamp(LocalDateTime.now())
+                        .timestamp(formattedTime)
                         .build(), status);
     }
 }

@@ -3,6 +3,7 @@ package br.com.api.service;
 import br.com.api.config.FileStorageProperties;
 import br.com.api.dto.FileDto;
 import br.com.api.entities.File_;
+import br.com.api.exception.BadRequestException;
 import br.com.api.repository.FileRepository;
 
 import jakarta.transaction.Transactional;
@@ -31,6 +32,16 @@ public class FileService {
     private final FileRepository fileRepository;
     private final FileStorageProperties fileStorageProperties;
     private final Path fileStorageLocation;
+
+    /*
+
+    TODO - atualizar método de updateFile para que ele:
+           certifique as versões anteriores dos arquivos;
+           veja a versão do arquivo que está atualizando;
+           modifique o nome do arquivo físico e no banco de dados para ficar no padrão nome_v*.*;
+           atualize o arquivo físico;
+
+    */
 
     public FileService() {
 
@@ -69,52 +80,38 @@ public class FileService {
         String baseName = FilenameUtils.getBaseName(originalFileName);
         String extension = FilenameUtils.getExtension(originalFileName);
 
-        String newNameIfAlreadyExists = modifyNameIfAlreadyExisting(baseName);
+        boolean nameAlreadyExisting = nameAlreadyExisting(baseName);
 
-        File_ fileToSave = File_.builder()
-                .name(newNameIfAlreadyExists)
-                .extension(extension)
-                .version(1)
-                .validity(fileDto.validity())
-                .build();
+        if(nameAlreadyExisting) {
 
-        Path fileStorageLocation = fileStorageProperties.getFileStorageLocation();
-        Files.createDirectories(fileStorageLocation);
-        Path destinationFile = fileStorageLocation.resolve
-                        (Paths.get(fileToSave.getName() + "." + fileToSave.getExtension()))
-                .normalize()
-                .toAbsolutePath();
+            File_ fileToSave = File_.builder()
+                    .name(baseName)
+                    .extension(extension)
+                    .version(1)
+                    .validity(fileDto.validity())
+                    .build();
 
-        multipartFile.transferTo(destinationFile);
-        fileRepository.save(fileToSave);
+            Path filePathStorage = fileStorageProperties.getFileStorageLocation();
+            Files.createDirectories(filePathStorage);
+            Path destinationFile = filePathStorage.resolve
+                            (Paths.get(fileToSave.getName() + "." + fileToSave.getExtension()))
+                    .normalize()
+                    .toAbsolutePath();
 
-        return fileToSave.getName();
-    }
+            multipartFile.transferTo(destinationFile);
+            fileRepository.save(fileToSave);
 
-    public String modifyNameIfAlreadyExisting(String name) {
-
-        List<File_> fileListWithThisName = fileRepository.findByName(name);
-        String finalName;
-
-        if (!fileListWithThisName.isEmpty()) {
-
-            int indexToAddToTheName = 1;
-            do {
-
-                String numberToAdd = String.valueOf(indexToAddToTheName);
-                String newNameWithIndexedNumber = name + "_" + numberToAdd;
-
-                fileListWithThisName = fileRepository.findByName(newNameWithIndexedNumber);
-                finalName = newNameWithIndexedNumber;
-
-                indexToAddToTheName++;
-            } while (!fileListWithThisName.isEmpty());
-
-            return finalName;
+            return fileToSave.getName();
         } else {
 
-            return name;
+            throw new BadRequestException("This file name already exists!");
         }
+    }
+
+    public Boolean nameAlreadyExisting(String name) {
+
+        List<File_> fileListWithThisName = fileRepository.findByName(name);
+        return fileListWithThisName.isEmpty();
     }
 
     @Transactional
@@ -177,8 +174,7 @@ public class FileService {
             Files.deleteIfExists(filePath);
         } catch (IOException ioexception) {
 
-            throw new RuntimeException
-                    ("Error deleting file from file system: " + file.getName(), ioexception);
+            throw new BadRequestException("Error deleting file from file system: " + file.getName());
         }
 
         fileRepository.deleteById(id);
@@ -191,7 +187,7 @@ public class FileService {
 
         if (listFiles.isEmpty()) {
 
-            throw new IllegalArgumentException("No files found with the specified name: " + name);
+            throw new BadRequestException("No files found with the specified name: " + name);
         }
 
         for (File_ file : listFiles) {
@@ -204,8 +200,7 @@ public class FileService {
                 Files.deleteIfExists(filePath);
             } catch (IOException ioexception) {
 
-                throw new RuntimeException
-                        ("Error deleting file from file system: " + originalFileName, ioexception);
+                throw new BadRequestException("Error deleting file from file system: " + originalFileName);
             }
 
             fileRepository.deleteById(file.getId());
