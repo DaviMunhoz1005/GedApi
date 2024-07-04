@@ -10,6 +10,7 @@ import jakarta.transaction.Transactional;
 
 import org.apache.commons.io.FilenameUtils;
 
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -35,11 +36,7 @@ public class FileService {
 
     /*
 
-    TODO - atualizar método de updateFile para que ele:
-           certifique as versões anteriores dos arquivos;
-           veja a versão do arquivo que está atualizando;
-           modifique o nome do arquivo físico e no banco de dados para ficar no padrão nome_v*.*;
-           atualize o arquivo físico;
+    TODO -
 
     */
 
@@ -73,16 +70,14 @@ public class FileService {
     @Transactional
     public String addNewFile(MultipartFile multipartFile, FileDto fileDto) throws IOException {
 
-        String originalFileName = StringUtils.cleanPath(
-                Objects.requireNonNull(multipartFile.getOriginalFilename())
-        );
+        String originalFileName = getOriginalFileName(multipartFile);
 
         String baseName = FilenameUtils.getBaseName(originalFileName);
         String extension = FilenameUtils.getExtension(originalFileName);
 
         boolean nameAlreadyExisting = nameAlreadyExisting(baseName);
 
-        if(nameAlreadyExisting) {
+        if (nameAlreadyExisting) {
 
             File_ fileToSave = File_.builder()
                     .name(baseName)
@@ -108,48 +103,73 @@ public class FileService {
         }
     }
 
-    public Boolean nameAlreadyExisting(String name) {
-
-        List<File_> fileListWithThisName = fileRepository.findByName(name);
-        return fileListWithThisName.isEmpty();
-    }
-
     @Transactional
     public File_ updateFile(MultipartFile multipartFile, FileDto fileDto) throws IOException {
 
-        String originalFileName = StringUtils.cleanPath(
-                Objects.requireNonNull(multipartFile.getOriginalFilename())
-        );
-
+        String originalFileName = getOriginalFileName(multipartFile);
         String baseName = FilenameUtils.getBaseName(originalFileName);
 
-        if (originalFileName.isEmpty()) {
-
-            throw new IllegalArgumentException("The 'name' field cannot be empty");
-        }
+        Path filePathStorage = fileStorageProperties.getFileStorageLocation();
 
         List<File_> listFiles = listFilesByName(baseName);
 
         if (listFiles.isEmpty()) {
 
-            throw new IllegalArgumentException("No files found with the specified name: " + baseName);
+            throw new BadRequestException("No files found with the specified name: " + baseName);
         }
 
         File_ previousFile = listFiles.get(listFiles.size() - 1);
+
+        File_ previousFileRenamed = File_.builder()
+                .name(previousFile.getName() + "_v" + previousFile.getVersion())
+                .extension(previousFile.getExtension())
+                .version(previousFile.getVersion())
+                .validity(previousFile.getValidity())
+                .build();
+
+        Path fileToRename = Paths.get(filePathStorage + "/" + previousFile.getName() + "." +
+                previousFile.getExtension());
+        Path modifiedFile = Paths.get(filePathStorage + "/" + previousFileRenamed.getName() + "." +
+                previousFileRenamed.getExtension());
+
+        BeanUtils.copyProperties(previousFileRenamed, previousFile, "id");
+        fileRepository.save(previousFile);
+
+        try {
+
+            Files.move(fileToRename, modifiedFile);
+        } catch(BadRequestException exception) {
+
+            throw new BadRequestException
+                    ("Unable to rename the file before this one for version differentiation");
+        }
 
         Files.createDirectories(fileStorageLocation);
         Path destinationFile = fileStorageLocation.resolve(originalFileName).normalize().toAbsolutePath();
 
         multipartFile.transferTo(destinationFile);
 
-        File_ fileToSave = File_.builder()
-                .name(previousFile.getName())
+        File_ fileUpdated = File_.builder()
+                .name(baseName)
                 .extension(previousFile.getExtension())
                 .version(previousFile.getVersion() + 1)
                 .validity(fileDto.validity() != null ? fileDto.validity() : previousFile.getValidity())
                 .build();
 
-        return fileRepository.save(fileToSave);
+        return fileRepository.save(fileUpdated);
+    }
+
+    public Boolean nameAlreadyExisting(String name) {
+
+        List<File_> fileListWithThisName = fileRepository.findByName(name);
+        return fileListWithThisName.isEmpty();
+    }
+
+    public String getOriginalFileName(MultipartFile multipartFile) {
+
+        return StringUtils.cleanPath(
+                Objects.requireNonNull(multipartFile.getOriginalFilename())
+        );
     }
 
     @Transactional
@@ -163,8 +183,8 @@ public class FileService {
     public void deleteFileById(Long id) {
 
         File_ file = fileRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException
-                        (("File not found with the specified ID:" + id)));
+                .orElseThrow(() -> new BadRequestException(
+                        ("File not found with the specified ID:" + id)));
 
         String originalFileName = file.getName() + "." + file.getExtension();
 
@@ -172,7 +192,7 @@ public class FileService {
         try {
 
             Files.deleteIfExists(filePath);
-        } catch (IOException ioexception) {
+        } catch(IOException ioexception) {
 
             throw new BadRequestException("Error deleting file from file system: " + file.getName());
         }
@@ -198,7 +218,7 @@ public class FileService {
             try {
 
                 Files.deleteIfExists(filePath);
-            } catch (IOException ioexception) {
+            } catch(IOException ioexception) {
 
                 throw new BadRequestException("Error deleting file from file system: " + originalFileName);
             }
