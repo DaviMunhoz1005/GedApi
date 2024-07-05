@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -33,12 +34,6 @@ public class FileService {
     private final FileRepository fileRepository;
     private final FileStorageProperties fileStorageProperties;
     private final Path fileStorageLocation;
-
-    /*
-
-    TODO -
-
-    */
 
     public FileService() {
 
@@ -62,11 +57,6 @@ public class FileService {
         return fileRepository.findAll();
     }
 
-    public List<File_> listFilesByName(String name) {
-
-        return fileRepository.findByName(name);
-    }
-
     @Transactional
     public String addNewFile(MultipartFile multipartFile, FileDto fileDto) throws IOException {
 
@@ -77,7 +67,7 @@ public class FileService {
 
         boolean nameAlreadyExisting = nameAlreadyExisting(baseName);
 
-        if (nameAlreadyExisting) {
+        if (!nameAlreadyExisting) {
 
             File_ fileToSave = File_.builder()
                     .name(baseName)
@@ -103,13 +93,17 @@ public class FileService {
         }
     }
 
+    public Boolean nameAlreadyExisting(String name) {
+
+        List<File_> fileListWithThisName = fileRepository.findByName(name);
+        return !fileListWithThisName.isEmpty();
+    }
+
     @Transactional
     public File_ updateFile(MultipartFile multipartFile, FileDto fileDto) throws IOException {
 
         String originalFileName = getOriginalFileName(multipartFile);
         String baseName = FilenameUtils.getBaseName(originalFileName);
-
-        Path filePathStorage = fileStorageProperties.getFileStorageLocation();
 
         List<File_> listFiles = listFilesByName(baseName);
 
@@ -127,22 +121,7 @@ public class FileService {
                 .validity(previousFile.getValidity())
                 .build();
 
-        Path fileToRename = Paths.get(filePathStorage + "/" + previousFile.getName() + "." +
-                previousFile.getExtension());
-        Path modifiedFile = Paths.get(filePathStorage + "/" + previousFileRenamed.getName() + "." +
-                previousFileRenamed.getExtension());
-
-        BeanUtils.copyProperties(previousFileRenamed, previousFile, "id");
-        fileRepository.save(previousFile);
-
-        try {
-
-            Files.move(fileToRename, modifiedFile);
-        } catch(BadRequestException exception) {
-
-            throw new BadRequestException
-                    ("Unable to rename the file before this one for version differentiation");
-        }
+        renameFile(previousFile, previousFileRenamed);
 
         Files.createDirectories(fileStorageLocation);
         Path destinationFile = fileStorageLocation.resolve(originalFileName).normalize().toAbsolutePath();
@@ -159,24 +138,11 @@ public class FileService {
         return fileRepository.save(fileUpdated);
     }
 
-    public Boolean nameAlreadyExisting(String name) {
-
-        List<File_> fileListWithThisName = fileRepository.findByName(name);
-        return fileListWithThisName.isEmpty();
-    }
-
     public String getOriginalFileName(MultipartFile multipartFile) {
 
         return StringUtils.cleanPath(
                 Objects.requireNonNull(multipartFile.getOriginalFilename())
         );
-    }
-
-    @Transactional
-    public Resource downloadFile(String fileName) throws MalformedURLException {
-
-        Path filePath = fileStorageLocation.resolve(fileName).normalize();
-        return new UrlResource(filePath.toUri());
     }
 
     @Transactional
@@ -198,6 +164,66 @@ public class FileService {
         }
 
         fileRepository.deleteById(id);
+
+        List<File_> listFiles = listFilesByName(file.getName());
+
+        if (!listFiles.isEmpty()) {
+
+            File_ previousFile = listFiles.get(listFiles.size() - 1);
+
+            File_ previousFileRenamed = File_.builder()
+                    .name(file.getName())
+                    .extension(previousFile.getExtension())
+                    .version(previousFile.getVersion())
+                    .validity(previousFile.getValidity())
+                    .build();
+
+            renameFile(previousFile, previousFileRenamed);
+        }
+    }
+
+    public List<File_> listFilesByName(String name) {
+
+        List<File_> allFilesWithThisName = new ArrayList<>();
+
+        for(int i = 1; i <= 10; i++) {
+
+            List<File_> fileNameWithVersion = fileRepository.findByName(name + "_V" + i);
+            allFilesWithThisName.addAll(fileNameWithVersion);
+        }
+
+        allFilesWithThisName.addAll(fileRepository.findByName(name));
+
+        return allFilesWithThisName;
+    }
+
+    public void renameFile(File_ previousFile, File_ previousFileRenamed) {
+
+        Path filePathStorage = fileStorageProperties.getFileStorageLocation();
+
+        Path fileToRename = Paths.get(filePathStorage + "/" + previousFile.getName() + "." +
+                previousFile.getExtension());
+        Path modifiedFile = Paths.get(filePathStorage + "/" + previousFileRenamed.getName() + "." +
+                previousFileRenamed.getExtension());
+
+        BeanUtils.copyProperties(previousFileRenamed, previousFile, "id");
+        fileRepository.save(previousFile);
+
+        try {
+
+            Files.move(fileToRename, modifiedFile);
+        } catch(IOException exception) {
+
+            throw new BadRequestException
+                    ("Unable to rename the file before this one for version differentiation");
+        }
+    }
+
+    @Transactional
+    public Resource downloadFile(String fileName) throws MalformedURLException {
+
+        Path filePath = fileStorageLocation.resolve(fileName).normalize();
+        return new UrlResource(filePath.toUri());
     }
 
     @Transactional
