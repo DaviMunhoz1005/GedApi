@@ -1,4 +1,4 @@
-package br.com.dowloadAndUploadFiles.entities;
+package br.com.api.entities;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -20,14 +20,18 @@ public class File_ {
     private Long id;
 
     @NotNull(message = "The field name cannot be empty")
+    @Column(nullable = false)
     private String name;
 
     @NotNull(message = "The field extension cannot be empty")
+    @Column(nullable = false)
     private String extension;
 
     @NotNull(message = "The field version cannot be empty")
+    @Column(nullable = false)
     private Integer version;
 
     @NotNull(message = "The field validity cannot be empty")
+    @Column(nullable = false)
     private LocalDate validity;
 }

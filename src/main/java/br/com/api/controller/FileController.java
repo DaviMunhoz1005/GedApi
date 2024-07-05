@@ -1,14 +1,18 @@
-package br.com.dowloadAndUploadFiles.controller;
+package br.com.api.controller;
 
-import br.com.dowloadAndUploadFiles.service.FileService;
+import br.com.api.service.FileService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import br.com.dowloadAndUploadFiles.dto.FileDto;
-import br.com.dowloadAndUploadFiles.entities.File_;
+import br.com.api.dto.FileDto;
+import br.com.api.entities.File_;
 
 import jakarta.validation.Valid;
 
@@ -28,12 +32,6 @@ public class FileController {
 
     private final FileService fileService;
 
-    /*
-
-    TODO - fazer controller do download;
-
-    */
-
     @GetMapping
     public ResponseEntity<List<File_>> listFiles() {
 
@@ -50,9 +48,10 @@ public class FileController {
     public ResponseEntity<String> addNewFile(@RequestPart("file") MultipartFile file,
                                              @RequestPart("fileDto") FileDto fileDto) throws IOException {
 
-        fileService.addNewFile(file, fileDto);
+        String fileName = fileService.addNewFile(file, fileDto);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body("Arquivo e JSON recebidos com sucesso!");
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body("Arquivo e JSON recebidos com sucesso, nome do arquivo foi salvo como: " + fileName);
     }
 
     @PutMapping(path = "upload", consumes = {"multipart/form-data"})
@@ -60,6 +59,31 @@ public class FileController {
                                             @RequestPart("json") FileDto fileDto) throws IOException {
 
         return new ResponseEntity<>(fileService.updateFile(file, fileDto), HttpStatus.OK);
+    }
+
+    @GetMapping(path = "download/{fileName:.+}")
+    public ResponseEntity<Resource> downloadFile(@PathVariable String fileName,
+                                                 HttpServletRequest httpServletRequest) {
+        try {
+
+            Resource resource = fileService.downloadFile(fileName);
+
+            String contentType = httpServletRequest.getServletContext()
+                    .getMimeType(resource.getFile().getAbsolutePath());
+
+            if (contentType == null) {
+
+                contentType = "application/octet-stream";
+            }
+
+            return ResponseEntity.ok().contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + resource.getFilename() + "\"")
+                    .body(resource);
+        } catch(Exception ex) {
+
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
     }
 
     @DeleteMapping(path = "{id}")
