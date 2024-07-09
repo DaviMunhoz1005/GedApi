@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import br.com.api.dto.FileDto;
@@ -25,7 +24,7 @@ import java.io.IOException;
 
 import java.util.List;
 
-@Controller
+@RestController
 @RequestMapping("/file")
 @RequiredArgsConstructor
 public class FileController {
