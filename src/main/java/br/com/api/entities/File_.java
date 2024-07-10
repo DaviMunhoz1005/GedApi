@@ -34,4 +34,8 @@ public class File_ {
     @NotNull(message = "The field validity cannot be empty")
     @Column(nullable = false)
     private LocalDate validity;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 }

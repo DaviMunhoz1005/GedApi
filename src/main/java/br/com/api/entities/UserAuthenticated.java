@@ -12,12 +12,6 @@ public class UserAuthenticated implements UserDetails {
 
     private final User user;
 
-    /*
-
-    TODO - pesquisar sobre as roles e definir elas para usuários diferentes, consultar ProductAPI
-
-    */
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
 

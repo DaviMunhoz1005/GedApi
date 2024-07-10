@@ -17,9 +17,10 @@ public class User {
 
     /*
 
-    TODO - Analisar quais são os atributos necessários para eu controlar o User, permissões de atualizar documento;
-           Relação de User com File_;
-           Criar DTO caso necessário;
+    TODO - Implementar a diferenciação de roles para eu controlar o User, permissões dos documento;
+           Relação de User com File_, fazer com que eu precise informar apenas o nome ou id do usuário;
+           Criar DTO;
+           Rever vídeo do Guia Definitivo para retornar um token de forma formatada pelo dto LoginResponse q ele fez;
 
     */
 
@@ -34,7 +35,7 @@ public class User {
     @NotNull(message = "The field password cannot be empty")
     private String password;
 
-    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "USERS_ROLES",
             joinColumns = @JoinColumn(name = "user_id"),

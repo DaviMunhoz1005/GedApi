@@ -74,6 +74,7 @@ public class FileService {
                     .extension(extension)
                     .version(1)
                     .validity(fileDto.validity())
+                    .user(fileDto.user())
                     .build();
 
             Path filePathStorage = fileStorageProperties.getFileStorageLocation();

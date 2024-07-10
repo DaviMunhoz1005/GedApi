@@ -12,18 +12,20 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("authenticate")
+@RequestMapping("user")
 public class AuthenticationController {
 
     /*
 
-    TODO - corrigir para usar dto de user
+    TODO - Corrigir para usar dto de user;
+           Criar para listar usuários por nome;
+           Criar para listar usuários por id;
 
     */
 
     private final AuthenticationService authenticationService;
 
-    @PostMapping
+    @PostMapping(path = "token")
     public String authenticate(Authentication authentication) {
 
         return authenticationService.authenticate(authentication);

@@ -42,7 +42,7 @@ public class SecurityConfig {
 
         httpSecurity.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/authenticate", "/authenticate/create").permitAll()
+                        .requestMatchers("/user/token", "/user/create").permitAll()
                         .anyRequest().authenticated())
                 .httpBasic(Customizer.withDefaults())
                 .oauth2ResourceServer(conf -> conf.jwt(Customizer.withDefaults()));
@@ -52,11 +52,13 @@ public class SecurityConfig {
 
     @Bean
     JwtDecoder jwtDecoder() {
+
         return NimbusJwtDecoder.withPublicKey(publicKey).build();
     }
 
     @Bean
     JwtEncoder jwtEncoder() {
+
         var jwt = new RSAKey.Builder(publicKey).privateKey(privateKey).build();
         var jwks = new ImmutableJWKSet<>(new JWKSet(jwt));
         return new NimbusJwtEncoder(jwks);
@@ -64,6 +66,7 @@ public class SecurityConfig {
 
     @Bean
     PasswordEncoder passwordEncoder() {
+
         return new BCryptPasswordEncoder();
     }
 }
