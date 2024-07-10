@@ -9,5 +9,7 @@ public record FileDto(
 
         @NotNull(message = "The field validity cannot be empty")
         LocalDate validity,
+
+        @NotNull(message = "The field user cannot be empty")
         User user){
 }

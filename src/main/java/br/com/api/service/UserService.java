@@ -16,11 +16,11 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class AuthenticationService {
+public class UserService {
 
     /*
 
-    TODO - Corrigir para usar dto de user
+    TODO - Corrigir para usar dto de user;
 
     */
 
@@ -50,5 +50,17 @@ public class AuthenticationService {
         userRepository.save(userToSave);
 
         return userToSave;
+    }
+
+    public User findUserById(Long id) {
+
+        return userRepository.findById(id)
+                .orElseThrow(() -> new BadRequestException("There is no user linked to the id: " + id));
+    }
+
+    public User findUserByUsername(String username) {
+
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new BadRequestException("There is no user linked to the username: " + username));
     }
 }

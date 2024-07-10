@@ -37,5 +37,6 @@ public class File_ {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
+    @NotNull(message = "The field user cannot be empty")
     private User user;
 }
