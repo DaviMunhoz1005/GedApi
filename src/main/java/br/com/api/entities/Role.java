@@ -15,7 +15,8 @@ public class Role {
 
     /*
 
-    TODO - pesquisar como manipular permissões de usuários de acordo com a role
+    TODO - Pesquisar como manipular permissões de usuários de acordo com a role;
+           Criar um atributo de descrição do que a role faz e não faz;
 
     */
 

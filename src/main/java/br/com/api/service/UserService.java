@@ -1,6 +1,7 @@
 package br.com.api.service;
 
-import br.com.api.entities.Role;
+import br.com.api.dto.JwtResponse;
+import br.com.api.dto.UserDto;
 import br.com.api.entities.User;
 import br.com.api.exception.BadRequestException;
 import br.com.api.repository.RoleRepository;
@@ -12,39 +13,44 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.time.Instant;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
-
-    /*
-
-    TODO - Corrigir para usar dto de user;
-
-    */
 
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
 
-    public String authenticate(Authentication authentication) {
+    public JwtResponse authenticate(Authentication authentication) {
 
-        return jwtService.generateToken(authentication);
+        Instant  instant = Instant.now().plusSeconds(3600L);
+
+        LocalTime expiresIn = instant.atZone(ZoneId.systemDefault()).toLocalTime();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+
+        String formattedTime = expiresIn.format(formatter);
+
+        return new JwtResponse(jwtService.generateToken(authentication), formattedTime);
     }
 
-    public User createUser(User user) {
+    public User createUser(UserDto userDto) {
 
-        List<Role> roleList = user.getRoles().stream()
-                .map(role -> roleRepository.findById(role.getId())
-                        .orElseThrow(() -> new BadRequestException("Role not found with id " + role.getId())))
-                .toList();
+        User user = User.builder()
+                .username(userDto.username())
+                .password(userDto.password())
+                .roles(roleRepository.findById(userDto.roleInt()).stream().toList())
+                .build();
 
         User userToSave = User.builder()
                 .username(user.getUsername())
                 .password(passwordEncoder.encode(user.getPassword()))
-                .roles(roleList)
+                .roles(user.getRoles())
                 .build();
 
         userRepository.save(userToSave);
@@ -61,6 +67,7 @@ public class UserService {
     public User findUserByUsername(String username) {
 
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new BadRequestException("There is no user linked to the username: " + username));
+                .orElseThrow(() -> new
+                        BadRequestException("There is no user linked to the username: " + username));
     }
 }

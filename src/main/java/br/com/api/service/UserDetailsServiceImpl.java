@@ -1,6 +1,5 @@
 package br.com.api.service;
 
-import br.com.api.entities.UserAuthenticated;
 import br.com.api.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,7 +17,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
         return userRepository.findByUsername(username)
-                .map(UserAuthenticated :: new)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 }

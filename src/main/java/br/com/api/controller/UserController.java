@@ -1,7 +1,10 @@
 package br.com.api.controller;
 
+import br.com.api.dto.JwtResponse;
+import br.com.api.dto.UserDto;
 import br.com.api.entities.User;
 import br.com.api.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 
@@ -12,24 +15,18 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("user")
 public class UserController {
 
-    /*
-
-    TODO - Corrigir para usar dto de user;
-
-    */
-
     private final UserService userService;
 
     @PostMapping(path = "token")
-    public String authenticate(Authentication authentication) {
+    public JwtResponse authenticate(Authentication authentication) {
 
         return userService.authenticate(authentication);
     }
 
     @PostMapping(path = "create")
-    public User createUser(@RequestBody User user) {
+    public User createUser(@Valid @RequestBody UserDto userDto) {
 
-        return userService.createUser(user);
+        return userService.createUser(userDto);
     }
 
     @GetMapping(path = "{id}")

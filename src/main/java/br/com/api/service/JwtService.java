@@ -20,7 +20,7 @@ public class JwtService {
     public String generateToken(Authentication authentication) {
 
         Instant now = Instant.now();
-        long expiryToken = 3600L;
+        Instant expiryToken = now.plusSeconds(3600L);
 
         String scopes = authentication.getAuthorities().stream()
                 .map(GrantedAuthority :: getAuthority)
@@ -29,7 +29,7 @@ public class JwtService {
         var claims = JwtClaimsSet.builder()
                 .issuer("DownloadAndUploadAPI")
                 .issuedAt(now)
-                .expiresAt(now.plusSeconds(expiryToken))
+                .expiresAt(expiryToken)
                 .subject(authentication.getName())
                 .claim("scope", scopes)
                 .build();
