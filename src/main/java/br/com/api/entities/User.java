@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -20,14 +21,17 @@ public class User implements UserDetails {
 
     /*
 
-    TODO - Implementar a diferenciação de roles para eu controlar o User, permissões dos documento;
-           Relação de User com File_, fazer com que eu precise informar apenas o nome ou id do usuário;
+    TODO - Criar a relação User File;
+           Analisar métodos que precisam ser criados e modificados com a relação User File_;
+           Pensar na lógica de renovação de expiresIn do Token;
+           Pensar na lógica de outra table para version dos documentos;
+           Analisar JSON na área de trabalho;
 
     */
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID uuid;
 
     @Column(unique = true)
     @NotNull(message = "The field username cannot be empty")
@@ -41,7 +45,7 @@ public class User implements UserDetails {
             name = "USERS_ROLES",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id"))
-    private List<Role> roles;
+    private List<Role> roleList;
 
     @Override
     public String getPassword() {
@@ -57,26 +61,9 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
-    }
 
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return true;
+        return roleList.stream()
+                .map(role -> (GrantedAuthority) () -> role.getRoleName().name())
+                .toList();
     }
 }

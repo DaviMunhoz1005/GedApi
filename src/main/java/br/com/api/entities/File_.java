@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -16,8 +17,8 @@ import java.time.LocalDate;
 public class File_ {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID uuid;
 
     @NotNull(message = "The field name cannot be empty")
     @Column(nullable = false)
@@ -34,9 +35,4 @@ public class File_ {
     @NotNull(message = "The field validity cannot be empty")
     @Column(nullable = false)
     private LocalDate validity;
-
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    @NotNull(message = "The field user cannot be empty")
-    private User user;
 }

@@ -29,14 +29,8 @@ public class UserController {
         return userService.createUser(userDto);
     }
 
-    @GetMapping(path = "{id}")
-    public User findUserById(@PathVariable Long id) {
-
-        return userService.findUserById(id);
-    }
-
     @GetMapping(path = "find")
-    public User findUserById(@RequestParam String username) {
+    public User findUserByUsername(@RequestParam String username) {
 
         return userService.findUserByUsername(username);
     }

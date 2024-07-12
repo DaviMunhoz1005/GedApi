@@ -6,6 +6,7 @@ import br.com.api.entities.File_;
 import br.com.api.exception.BadRequestException;
 import br.com.api.repository.FileRepository;
 
+import br.com.api.repository.UserRepository;
 import jakarta.transaction.Transactional;
 
 import org.apache.commons.io.FilenameUtils;
@@ -27,6 +28,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+
 
 @Service
 public class FileService {
@@ -52,6 +54,19 @@ public class FileService {
                 .normalize();
     }
 
+    /*
+
+    TODO - Atualizar métodos:
+                - listAllFiles() listar apenas os files do usuário que está fazendo a requisição;
+                - addNewFile() adicionar o arquivo ao objeto do usuário;
+                - Checar se na lista de files do usuário ele tem o arquivo informado:
+                        - updateFile();
+                        - usePreviousVersion();
+                        - deleteFileByName();
+                        - downloadFile();
+
+    */
+
     public List<File_> listAllFiles() {
 
         return fileRepository.findAll();
@@ -74,7 +89,6 @@ public class FileService {
                     .extension(extension)
                     .version(1)
                     .validity(fileDto.validity())
-                    .user(fileDto.user())
                     .build();
 
             Path filePathStorage = fileStorageProperties.getFileStorageLocation();
@@ -147,15 +161,20 @@ public class FileService {
     }
 
     @Transactional
-    public void deleteFileById(Long id) {
+    public void usePreviousVersion(String filename) {
 
-        File_ file = fileRepository.findById(id)
-                .orElseThrow(() -> new BadRequestException(
-                        ("File not found with the specified ID:" + id)));
+        List<File_> listFiles = listFilesByName(filename);
+
+        if(listFiles.size() == 1) {
+
+            throw new BadRequestException("This is the first version of the file");
+        }
+
+        File_ file = listFiles.get(listFiles.size() - 1);
 
         String originalFileName = file.getName() + "." + file.getExtension();
-
         Path filePath = fileStorageLocation.resolve(originalFileName).normalize().toAbsolutePath();
+
         try {
 
             Files.deleteIfExists(filePath);
@@ -164,13 +183,15 @@ public class FileService {
             throw new BadRequestException("Error deleting file from file system: " + file.getName());
         }
 
-        fileRepository.deleteById(id);
+        fileRepository.deleteFileByUuid(file.getUuid());
 
-        List<File_> listFiles = listFilesByName(file.getName());
+        List<File_> newListFiles = listFilesByName(filename);
+        new File_();
+        File_ previousFile;
 
-        if (!listFiles.isEmpty()) {
+        if (!newListFiles.isEmpty()) {
 
-            File_ previousFile = listFiles.get(listFiles.size() - 1);
+            previousFile = listFiles.get(newListFiles.size() - 1);
 
             File_ previousFileRenamed = File_.builder()
                     .name(file.getName())
@@ -181,50 +202,6 @@ public class FileService {
 
             renameFile(previousFile, previousFileRenamed);
         }
-    }
-
-    public List<File_> listFilesByName(String name) {
-
-        List<File_> allFilesWithThisName = new ArrayList<>();
-
-        for(int i = 1; i <= 10; i++) {
-
-            List<File_> fileNameWithVersion = fileRepository.findByName(name + "_V" + i);
-            allFilesWithThisName.addAll(fileNameWithVersion);
-        }
-
-        allFilesWithThisName.addAll(fileRepository.findByName(name));
-
-        return allFilesWithThisName;
-    }
-
-    public void renameFile(File_ previousFile, File_ previousFileRenamed) {
-
-        Path filePathStorage = fileStorageProperties.getFileStorageLocation();
-
-        Path fileToRename = Paths.get(filePathStorage + "/" + previousFile.getName() + "." +
-                previousFile.getExtension());
-        Path modifiedFile = Paths.get(filePathStorage + "/" + previousFileRenamed.getName() + "." +
-                previousFileRenamed.getExtension());
-
-        BeanUtils.copyProperties(previousFileRenamed, previousFile, "id");
-        fileRepository.save(previousFile);
-
-        try {
-
-            Files.move(fileToRename, modifiedFile);
-        } catch(IOException exception) {
-
-            throw new BadRequestException
-                    ("Unable to rename the file before this one for version differentiation");
-        }
-    }
-
-    @Transactional
-    public Resource downloadFile(String fileName) throws MalformedURLException {
-
-        Path filePath = fileStorageLocation.resolve(fileName).normalize();
-        return new UrlResource(filePath.toUri());
     }
 
     @Transactional
@@ -250,7 +227,53 @@ public class FileService {
                 throw new BadRequestException("Error deleting file from file system: " + originalFileName);
             }
 
-            fileRepository.deleteById(file.getId());
+            fileRepository.deleteFileByUuid(file.getUuid());
         }
+    }
+
+    public List<File_> listFilesByName(String name) {
+
+        List<File_> allFilesWithThisName = new ArrayList<>();
+
+        for(int i = 1; i <= 10; i++) {
+
+            List<File_> fileNameWithVersion = fileRepository.findByName(name + "_V" + i);
+            allFilesWithThisName.addAll(fileNameWithVersion);
+        }
+
+        allFilesWithThisName.addAll(fileRepository.findByName(name));
+
+        return allFilesWithThisName;
+    }
+
+    @Transactional
+    public void renameFile(File_ previousFile, File_ previousFileRenamed) {
+
+        Path filePathStorage = fileStorageProperties.getFileStorageLocation();
+
+        Path fileToRename = Paths.get(filePathStorage + "/" + previousFile.getName() + "." +
+                previousFile.getExtension());
+
+        Path modifiedFile = Paths.get(filePathStorage + "/" + previousFileRenamed.getName() + "." +
+                previousFileRenamed.getExtension());
+
+        BeanUtils.copyProperties(previousFileRenamed, previousFile, "uuid");
+        fileRepository.save(previousFile);
+
+        try {
+
+            Files.move(fileToRename, modifiedFile);
+        } catch(IOException exception) {
+
+            throw new BadRequestException
+                    ("Unable to rename the file before this one for version differentiation");
+        }
+    }
+
+    @Transactional
+    public Resource downloadFile(String fileName) throws MalformedURLException {
+
+        Path filePath = fileStorageLocation.resolve(fileName).normalize();
+        return new UrlResource(filePath.toUri());
     }
 }

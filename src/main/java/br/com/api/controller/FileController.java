@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import br.com.api.dto.FileDto;
@@ -31,6 +32,17 @@ public class FileController {
 
     private final FileService fileService;
 
+    /*
+
+    TODO - Atualizar métodos para pedir o nome do usuário que está fazend a req:
+                - listFiles();
+                - updateFile();
+                - usePreviousVersion();
+                - deleteFileByName();
+                - downloadFile();
+
+    */
+
     @GetMapping
     public ResponseEntity<List<File_>> listFiles() {
 
@@ -44,6 +56,7 @@ public class FileController {
     }
 
     @PostMapping(path = "upload", consumes = "multipart/form-data")
+    @PreAuthorize("hasAnyAuthority('SCOPE_COMMON_USER', 'SCOPE_ADMIN_COMPANY')")
     public ResponseEntity<String> addNewFile(@RequestPart("file") MultipartFile file,
                                              @RequestPart("fileDto") FileDto fileDto) throws IOException {
 
@@ -54,6 +67,7 @@ public class FileController {
     }
 
     @PutMapping(path = "upload", consumes = {"multipart/form-data"})
+    @PreAuthorize("hasAnyAuthority('SCOPE_COMMON_USER', 'SCOPE_ADMIN_COMPANY')")
     public ResponseEntity<File_> updateFile(@Valid @RequestPart("file") MultipartFile file,
                                             @RequestPart("json") FileDto fileDto) throws IOException {
 
@@ -85,14 +99,16 @@ public class FileController {
         }
     }
 
-    @DeleteMapping(path = "{id}")
-    public ResponseEntity<Void> deleteFileById(@Valid @PathVariable Long id) {
+    @DeleteMapping(path = "previousVersion")
+    @PreAuthorize("hasAnyAuthority('SCOPE_COMMON_USER', 'SCOPE_ADMIN_COMPANY')")
+    public ResponseEntity<Void> usePreviousVersion(@Valid @RequestParam String filename) {
 
-        fileService.deleteFileById(id);
+        fileService.usePreviousVersion(filename);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @DeleteMapping
+    @PreAuthorize("hasAnyAuthority('SCOPE_COMMON_USER', 'SCOPE_ADMIN_COMPANY')")
     public ResponseEntity<Void> deleteFileByName(@Valid @RequestParam String name) {
 
         fileService.deleteFileByName(name);

@@ -44,24 +44,18 @@ public class UserService {
         User user = User.builder()
                 .username(userDto.username())
                 .password(userDto.password())
-                .roles(roleRepository.findById(userDto.roleInt()).stream().toList())
+                .roleList(roleRepository.findById(userDto.roleInt()).stream().toList())
                 .build();
 
         User userToSave = User.builder()
                 .username(user.getUsername())
                 .password(passwordEncoder.encode(user.getPassword()))
-                .roles(user.getRoles())
+                .roleList(user.getRoleList())
                 .build();
 
         userRepository.save(userToSave);
 
         return userToSave;
-    }
-
-    public User findUserById(Long id) {
-
-        return userRepository.findById(id)
-                .orElseThrow(() -> new BadRequestException("There is no user linked to the id: " + id));
     }
 
     public User findUserByUsername(String username) {
