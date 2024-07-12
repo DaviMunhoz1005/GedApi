@@ -21,8 +21,7 @@ public class User implements UserDetails {
 
     /*
 
-    TODO - Criar a relação User File;
-           Analisar métodos que precisam ser criados e modificados com a relação User File_;
+    TODO - Analisar métodos que precisam ser criados e modificados com a relação User File_;
            Pensar na lógica de renovação de expiresIn do Token;
            Pensar na lógica de outra table para version dos documentos;
            Analisar JSON na área de trabalho;
@@ -46,6 +45,10 @@ public class User implements UserDetails {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     private List<Role> roleList;
+
+    @OneToMany
+    @JoinColumn(name = "user_uuid")
+    private List<File_> fileList;
 
     @Override
     public String getPassword() {

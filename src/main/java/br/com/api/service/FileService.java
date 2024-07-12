@@ -3,6 +3,7 @@ package br.com.api.service;
 import br.com.api.config.FileStorageProperties;
 import br.com.api.dto.FileDto;
 import br.com.api.entities.File_;
+import br.com.api.entities.User;
 import br.com.api.exception.BadRequestException;
 import br.com.api.repository.FileRepository;
 
@@ -36,29 +37,35 @@ public class FileService {
     private final FileRepository fileRepository;
     private final FileStorageProperties fileStorageProperties;
     private final Path fileStorageLocation;
+    private final UserRepository userRepository;
+    private final UserService userService;
 
     public FileService() {
 
         this.fileRepository = null;
         this.fileStorageProperties = null;
         this.fileStorageLocation = null;
+        this.userRepository = null;
+        this.userService = null;
     }
 
     @Autowired
-    public FileService(FileRepository fileRepository, FileStorageProperties fileStorageProperties) {
+    public FileService(FileRepository fileRepository, FileStorageProperties fileStorageProperties,
+                       UserRepository userRepository, UserService userService) {
 
         this.fileRepository = fileRepository;
         this.fileStorageProperties = fileStorageProperties;
         this.fileStorageLocation = Paths.get(fileStorageProperties.getUploadDirectory())
                 .toAbsolutePath()
                 .normalize();
+        this.userRepository = userRepository;
+        this.userService = userService;
     }
 
     /*
 
     TODO - Atualizar métodos:
                 - listAllFiles() listar apenas os files do usuário que está fazendo a requisição;
-                - addNewFile() adicionar o arquivo ao objeto do usuário;
                 - Checar se na lista de files do usuário ele tem o arquivo informado:
                         - updateFile();
                         - usePreviousVersion();
@@ -74,6 +81,8 @@ public class FileService {
 
     @Transactional
     public String addNewFile(MultipartFile multipartFile, FileDto fileDto) throws IOException {
+
+        User user = userService.findUserByUsername(fileDto.username());
 
         String originalFileName = getOriginalFileName(multipartFile);
 
@@ -100,6 +109,12 @@ public class FileService {
 
             multipartFile.transferTo(destinationFile);
             fileRepository.save(fileToSave);
+
+            List<File_> userFileList = user.getFileList();
+            userFileList.add(fileToSave);
+
+            user.setFileList(userFileList);
+            userRepository.save(user);
 
             return fileToSave.getName();
         } else {
