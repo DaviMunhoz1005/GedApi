@@ -21,10 +21,9 @@ public class User implements UserDetails {
 
     /*
 
-    TODO - Analisar métodos que precisam ser criados e modificados com a relação User File_;
-           Pensar na lógica de renovação de expiresIn do Token;
+    TODO - Pesquisar a renovação de expiresIn do Token;
            Pensar na lógica de outra table para version dos documentos;
-           Analisar JSON na área de trabalho;
+           Pesquisar em como decompor um JWT em uma requisição e pegar informações dele;
 
     */
 

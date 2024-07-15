@@ -30,29 +30,26 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FileController {
 
-    private final FileService fileService;
-
     /*
 
     TODO - Atualizar métodos para pedir o nome do usuário que está fazend a req:
-                - listFiles();
-                - updateFile();
-                - usePreviousVersion();
-                - deleteFileByName();
                 - downloadFile();
 
     */
 
-    @GetMapping
-    public ResponseEntity<List<File_>> listFiles() {
+    private final FileService fileService;
 
-        return new ResponseEntity<>(fileService.listAllFiles(), HttpStatus.OK);
+    @GetMapping(path = "find")
+    public ResponseEntity<List<File_>> listFiles(@RequestParam String username) {
+
+        return new ResponseEntity<>(fileService.listAllFilesFromUsername(username), HttpStatus.OK);
     }
 
-    @GetMapping(path = "param")
-    public ResponseEntity<List<File_>> listFilesByName(@Valid @RequestParam String name) {
+    @GetMapping(path = "findName")
+    public ResponseEntity<List<File_>> listFilesByName(@Valid @RequestParam String name,
+                                                       @RequestParam String username) {
 
-        return new ResponseEntity<>(fileService.listFilesByName(name), HttpStatus.OK);
+        return new ResponseEntity<>(fileService.listFilesByName(name, username), HttpStatus.OK);
     }
 
     @PostMapping(path = "upload", consumes = "multipart/form-data")
@@ -101,17 +98,18 @@ public class FileController {
 
     @DeleteMapping(path = "previousVersion")
     @PreAuthorize("hasAnyAuthority('SCOPE_COMMON_USER', 'SCOPE_ADMIN_COMPANY')")
-    public ResponseEntity<Void> usePreviousVersion(@Valid @RequestParam String filename) {
+    public ResponseEntity<Void> usePreviousVersion(@Valid @RequestParam String filename,
+                                                   @RequestParam String username) {
 
-        fileService.usePreviousVersion(filename);
+        fileService.usePreviousVersion(filename, username);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @DeleteMapping
     @PreAuthorize("hasAnyAuthority('SCOPE_COMMON_USER', 'SCOPE_ADMIN_COMPANY')")
-    public ResponseEntity<Void> deleteFileByName(@Valid @RequestParam String name) {
+    public ResponseEntity<Void> deleteFileByName(@Valid @RequestParam String name, @RequestParam String username) {
 
-        fileService.deleteFileByName(name);
+        fileService.deleteAllFilesWithName(name, username);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 }

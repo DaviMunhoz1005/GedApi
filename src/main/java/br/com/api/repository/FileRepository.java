@@ -11,6 +11,5 @@ import java.util.UUID;
 @Repository
 public interface FileRepository extends JpaRepository<File_, Long> {
 
-    List<File_> findByName(String name);
-    void deleteFileByUuid(UUID uuid);
+    List<File_> findByName(String filename);
 }

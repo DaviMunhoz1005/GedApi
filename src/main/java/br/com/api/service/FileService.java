@@ -34,6 +34,15 @@ import java.util.Objects;
 @Service
 public class FileService {
 
+    /*
+
+    TODO - Atualizar métodos:
+                - Checar se na lista de files do usuário ele tem o arquivo informado:
+                        - downloadFile();
+           Refatorar e limpar código;
+
+    */
+
     private final FileRepository fileRepository;
     private final FileStorageProperties fileStorageProperties;
     private final Path fileStorageLocation;
@@ -62,21 +71,11 @@ public class FileService {
         this.userService = userService;
     }
 
-    /*
+    public List<File_> listAllFilesFromUsername(String username) {
 
-    TODO - Atualizar métodos:
-                - listAllFiles() listar apenas os files do usuário que está fazendo a requisição;
-                - Checar se na lista de files do usuário ele tem o arquivo informado:
-                        - updateFile();
-                        - usePreviousVersion();
-                        - deleteFileByName();
-                        - downloadFile();
+        User user = userService.findUserByUsername(username);
 
-    */
-
-    public List<File_> listAllFiles() {
-
-        return fileRepository.findAll();
+        return user.getFileList();
     }
 
     @Transactional
@@ -135,7 +134,10 @@ public class FileService {
         String originalFileName = getOriginalFileName(multipartFile);
         String baseName = FilenameUtils.getBaseName(originalFileName);
 
-        List<File_> listFiles = listFilesByName(baseName);
+        User user = userService.findUserByUsername(fileDto.username());
+        List<File_> fileListUser = user.getFileList();
+
+        List<File_> listFiles = listFilesByName(baseName, fileDto.username());
 
         if (listFiles.isEmpty()) {
 
@@ -151,7 +153,7 @@ public class FileService {
                 .validity(previousFile.getValidity())
                 .build();
 
-        renameFile(previousFile, previousFileRenamed);
+        renameFile(previousFile, previousFileRenamed, fileDto.username());
 
         Files.createDirectories(fileStorageLocation);
         Path destinationFile = fileStorageLocation.resolve(originalFileName).normalize().toAbsolutePath();
@@ -165,7 +167,13 @@ public class FileService {
                 .validity(fileDto.validity() != null ? fileDto.validity() : previousFile.getValidity())
                 .build();
 
-        return fileRepository.save(fileUpdated);
+        fileRepository.save(fileUpdated);
+
+        fileListUser.add(fileUpdated);
+        user.setFileList(fileListUser);
+        userRepository.save(user);
+
+        return fileUpdated;
     }
 
     public String getOriginalFileName(MultipartFile multipartFile) {
@@ -176,9 +184,9 @@ public class FileService {
     }
 
     @Transactional
-    public void usePreviousVersion(String filename) {
+    public void usePreviousVersion(String filename, String username) {
 
-        List<File_> listFiles = listFilesByName(filename);
+        List<File_> listFiles = listFilesByName(filename, username);
 
         if(listFiles.size() == 1) {
 
@@ -198,10 +206,9 @@ public class FileService {
             throw new BadRequestException("Error deleting file from file system: " + file.getName());
         }
 
-        fileRepository.deleteFileByUuid(file.getUuid());
+        fileRepository.delete(file);
 
-        List<File_> newListFiles = listFilesByName(filename);
-        new File_();
+        List<File_> newListFiles = listFilesByName(filename, username);
         File_ previousFile;
 
         if (!newListFiles.isEmpty()) {
@@ -215,14 +222,14 @@ public class FileService {
                     .validity(previousFile.getValidity())
                     .build();
 
-            renameFile(previousFile, previousFileRenamed);
+            renameFileTest(file, previousFile, previousFileRenamed, username);
         }
     }
 
     @Transactional
-    public void deleteFileByName(String name) {
+    public void deleteAllFilesWithName(String name, String username) {
 
-        List<File_> listFiles = listFilesByName(name);
+        List<File_> listFiles = listFilesByName(name, username);
 
         if (listFiles.isEmpty()) {
 
@@ -242,29 +249,61 @@ public class FileService {
                 throw new BadRequestException("Error deleting file from file system: " + originalFileName);
             }
 
-            fileRepository.deleteFileByUuid(file.getUuid());
+            fileRepository.delete(file);
         }
     }
 
-    public List<File_> listFilesByName(String name) {
+    public List<File_> listFilesByName(String name, String username) {
 
-        List<File_> allFilesWithThisName = new ArrayList<>();
+        User user = userService.findUserByUsername(username);
+        List<File_> allFilesWithThisNameFromUser = new ArrayList<>();
+        List<File_> filesFromUser = user.getFileList();
+        List<File_> fileNameWithVersion = new ArrayList<>();
 
         for(int i = 1; i <= 10; i++) {
 
-            List<File_> fileNameWithVersion = fileRepository.findByName(name + "_V" + i);
-            allFilesWithThisName.addAll(fileNameWithVersion);
+            fileNameWithVersion.addAll(fileRepository.findByName(name + "_V" + i));
         }
 
-        allFilesWithThisName.addAll(fileRepository.findByName(name));
+        if(!fileNameWithVersion.isEmpty()) {
 
-        return allFilesWithThisName;
+            for (File_ fileVersion : fileNameWithVersion) {
+
+                for (File_ file : filesFromUser) {
+
+                    if (fileVersion == file) {
+
+                        allFilesWithThisNameFromUser.add(fileVersion);
+                    }
+                }
+            }
+        }
+
+        List<File_> fileNameWithoutVersion = fileRepository.findByName(name);
+
+        if(!fileNameWithoutVersion.isEmpty()) {
+
+            for(File_ fileUser : filesFromUser) {
+
+                for(File_ fileName : fileNameWithoutVersion) {
+
+                    if(fileUser == fileName) {
+
+                        allFilesWithThisNameFromUser.add(fileName);
+                    }
+                }
+            }
+        }
+
+        return allFilesWithThisNameFromUser;
     }
 
     @Transactional
-    public void renameFile(File_ previousFile, File_ previousFileRenamed) {
+    public void renameFile(File_ previousFile, File_ previousFileRenamed, String username) {
 
         Path filePathStorage = fileStorageProperties.getFileStorageLocation();
+        User user = userService.findUserByUsername(username);
+        List<File_> userFileList = user.getFileList();
 
         Path fileToRename = Paths.get(filePathStorage + "/" + previousFile.getName() + "." +
                 previousFile.getExtension());
@@ -272,8 +311,47 @@ public class FileService {
         Path modifiedFile = Paths.get(filePathStorage + "/" + previousFileRenamed.getName() + "." +
                 previousFileRenamed.getExtension());
 
+        userFileList.remove(previousFile);
+
         BeanUtils.copyProperties(previousFileRenamed, previousFile, "uuid");
+
         fileRepository.save(previousFile);
+        userFileList.add(previousFile);
+        user.setFileList(userFileList);
+        userRepository.save(user);
+
+        try {
+
+            Files.move(fileToRename, modifiedFile);
+        } catch(IOException exception) {
+
+            throw new BadRequestException
+                    ("Unable to rename the file before this one for version differentiation");
+        }
+    }
+
+    @Transactional
+    public void renameFileTest(File_ file, File_ previousFile, File_ previousFileRenamed, String username) {
+
+        Path filePathStorage = fileStorageProperties.getFileStorageLocation();
+        User user = userService.findUserByUsername(username);
+        List<File_> userFileList = user.getFileList();
+
+        Path fileToRename = Paths.get(filePathStorage + "/" + previousFile.getName() + "." +
+                previousFile.getExtension());
+
+        Path modifiedFile = Paths.get(filePathStorage + "/" + previousFileRenamed.getName() + "." +
+                previousFileRenamed.getExtension());
+
+        userFileList.remove(previousFile);
+        userFileList.remove(file);
+
+        BeanUtils.copyProperties(previousFileRenamed, previousFile, "uuid");
+
+        fileRepository.save(previousFile);
+        userFileList.add(previousFile);
+        user.setFileList(userFileList);
+        userRepository.save(user);
 
         try {
 
