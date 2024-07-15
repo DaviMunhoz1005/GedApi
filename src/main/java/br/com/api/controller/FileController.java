@@ -30,13 +30,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FileController {
 
-    /*
-
-    TODO - Atualizar métodos para pedir o nome do usuário que está fazend a req:
-                - downloadFile();
-
-    */
-
     private final FileService fileService;
 
     @GetMapping(path = "find")
@@ -54,13 +47,10 @@ public class FileController {
 
     @PostMapping(path = "upload", consumes = "multipart/form-data")
     @PreAuthorize("hasAnyAuthority('SCOPE_COMMON_USER', 'SCOPE_ADMIN_COMPANY')")
-    public ResponseEntity<String> addNewFile(@RequestPart("file") MultipartFile file,
+    public ResponseEntity<File_> addNewFile(@RequestPart("file") MultipartFile file,
                                              @RequestPart("fileDto") FileDto fileDto) throws IOException {
 
-        String fileName = fileService.addNewFile(file, fileDto);
-
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body("Arquivo e JSON recebidos com sucesso, nome do arquivo foi salvo como: " + fileName);
+        return new ResponseEntity<>(fileService.addNewFile(file, fileDto), HttpStatus.CREATED);
     }
 
     @PutMapping(path = "upload", consumes = {"multipart/form-data"})
@@ -107,7 +97,8 @@ public class FileController {
 
     @DeleteMapping
     @PreAuthorize("hasAnyAuthority('SCOPE_COMMON_USER', 'SCOPE_ADMIN_COMPANY')")
-    public ResponseEntity<Void> deleteFileByName(@Valid @RequestParam String name, @RequestParam String username) {
+    public ResponseEntity<Void> deleteFileByName(@Valid @RequestParam String name,
+                                                 @RequestParam String username) {
 
         fileService.deleteAllFilesWithName(name, username);
         return new ResponseEntity<>(HttpStatus.OK);

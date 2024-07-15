@@ -24,6 +24,7 @@ public class User implements UserDetails {
     TODO - Pesquisar a renovação de expiresIn do Token;
            Pensar na lógica de outra table para version dos documentos;
            Pesquisar em como decompor um JWT em uma requisição e pegar informações dele;
+           Adequar meu código ao máximo ao SOLID;
 
     */
 
