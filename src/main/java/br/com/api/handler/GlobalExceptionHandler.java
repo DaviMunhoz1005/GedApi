@@ -28,6 +28,12 @@ import java.util.stream.Collectors;
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
+    /*
+    *
+    * TODO - criar exceção personalizada para 401 Unauthorized
+    *
+    * */
+
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     LocalDateTime localDateTime = LocalDateTime.now();
     String formattedTime = localDateTime.format(formatter);

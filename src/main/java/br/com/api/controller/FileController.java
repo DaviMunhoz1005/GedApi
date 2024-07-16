@@ -46,7 +46,7 @@ public class FileController {
     }
 
     @PostMapping(path = "upload", consumes = "multipart/form-data")
-    @PreAuthorize("hasAnyAuthority('SCOPE_COMMON_USER', 'SCOPE_ADMIN_COMPANY')")
+    @PreAuthorize("hasAnyAuthority('SCOPE_CLIENT')")
     public ResponseEntity<File_> addNewFile(@RequestPart("file") MultipartFile file,
                                              @RequestPart("fileDto") FileDto fileDto) throws IOException {
 
@@ -54,7 +54,7 @@ public class FileController {
     }
 
     @PutMapping(path = "upload", consumes = {"multipart/form-data"})
-    @PreAuthorize("hasAnyAuthority('SCOPE_COMMON_USER', 'SCOPE_ADMIN_COMPANY')")
+    @PreAuthorize("hasAnyAuthority('SCOPE_CLIENT')")
     public ResponseEntity<File_> updateFile(@Valid @RequestPart("file") MultipartFile file,
                                             @RequestPart("json") FileDto fileDto) throws IOException {
 
@@ -87,7 +87,7 @@ public class FileController {
     }
 
     @DeleteMapping(path = "previousVersion")
-    @PreAuthorize("hasAnyAuthority('SCOPE_COMMON_USER', 'SCOPE_ADMIN_COMPANY')")
+    @PreAuthorize("hasAnyAuthority('SCOPE_CLIENT')")
     public ResponseEntity<Void> usePreviousVersion(@Valid @RequestParam String filename,
                                                    @RequestParam String username) {
 
@@ -96,7 +96,7 @@ public class FileController {
     }
 
     @DeleteMapping
-    @PreAuthorize("hasAnyAuthority('SCOPE_COMMON_USER', 'SCOPE_ADMIN_COMPANY')")
+    @PreAuthorize("hasAnyAuthority('SCOPE_CLIENT')")
     public ResponseEntity<Void> deleteFileByName(@Valid @RequestParam String name,
                                                  @RequestParam String username) {
 

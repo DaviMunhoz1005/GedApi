@@ -16,15 +16,17 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "TB_USER")
+@Inheritance( strategy = InheritanceType.TABLE_PER_CLASS)
 @Builder
 public class User implements UserDetails {
 
     /*
 
-    TODO - Pesquisar a renovação de expiresIn do Token;
+    TODO - Implementar lógica do arquivos do cliente e do employee;
+           Pesquisar em como decompor um JWT em uma requisição e pegar informações dele:
+                    - Ler postagem Medium que mostra como pegar o getSubject do Token;
+           Estudar e implementar refreshToken;
            Pensar na lógica de outra table para version dos documentos;
-           Pesquisar em como decompor um JWT em uma requisição e pegar informações dele;
-           Adequar meu código ao máximo ao SOLID;
 
     */
 
