@@ -17,18 +17,17 @@ import java.util.UUID;
 @NoArgsConstructor
 @Table(name = "TB_USER")
 @Inheritance(strategy = InheritanceType.JOINED)
-@Builder
 public class User implements UserDetails {
 
     /*
-
-    TODO - Implementar lógica do arquivos do cliente e do employee;
-           Pesquisar em como decompor um JWT em uma requisição e pegar informações dele:
-                    - Ler postagem Medium que mostra como pegar o getSubject do Token;
-           Estudar e implementar refreshToken;
-           Pensar na lógica de outra table para version dos documentos;
-
-    */
+    *
+    * TODO - Implementar lógica do arquivos do cliente e do employee;
+    *        Pesquisar em como decompor um JWT em uma requisição e pegar informações dele:
+    *             - Ler postagem Medium que mostra como pegar o getSubject do Token;
+    *        Estudar e implementar refreshToken;
+    *        Pensar na lógica de outra table para version dos documentos;
+    *
+    * */
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -48,9 +47,16 @@ public class User implements UserDetails {
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     private List<Role> roleList;
 
-    @OneToMany
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_uuid")
     private List<File_> fileList;
+
+    public User(String username, String password, List<Role> roleList) {
+
+        this.username = username;
+        this.password = password;
+        this.roleList = roleList;
+    }
 
     @Override
     public String getPassword() {
@@ -72,3 +78,12 @@ public class User implements UserDetails {
                 .toList();
     }
 }
+/*
+
+    TODO - Implementar lógica do arquivos do cliente e do employee;
+           Pesquisar em como decompor um JWT em uma requisição e pegar informações dele:
+                    - Ler postagem Medium que mostra como pegar o getSubject do Token;
+           Estudar e implementar refreshToken;
+           Pensar na lógica de outra table para version dos documentos;
+
+    */

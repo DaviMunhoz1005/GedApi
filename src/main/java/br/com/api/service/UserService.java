@@ -3,7 +3,6 @@ package br.com.api.service;
 import br.com.api.dto.ClientDto;
 import br.com.api.dto.EmployeeDto;
 import br.com.api.dto.JwtResponse;
-import br.com.api.dto.UserDto;
 import br.com.api.entities.Client;
 import br.com.api.entities.Employee;
 import br.com.api.entities.User;
@@ -49,10 +48,11 @@ public class UserService {
 
     public Client createClient(ClientDto clientDto) {
 
-        Client clientToSave = new Client();
-        clientToSave.setUsername(clientDto.username());
-        clientToSave.setPassword(passwordEncoder.encode(clientDto.password()));
-        clientToSave.setRoleList(roleRepository.findById(clientDto.roleInt()).stream().toList());
+        Client clientToSave = Client.builder()
+                .username(clientDto.username())
+                .password(passwordEncoder.encode(clientDto.password()))
+                .roleList(roleRepository.findById(clientDto.roleInt()).stream().toList())
+                .build();
 
         clientRepository.save(clientToSave);
         return clientToSave;
@@ -60,11 +60,12 @@ public class UserService {
 
     public Employee createEmployee(EmployeeDto employeeDto) {
 
-        Employee employeeToSave = new Employee();
-        employeeToSave.setUsername(employeeDto.username());
-        employeeToSave.setPassword(passwordEncoder.encode(employeeDto.password()));
-        employeeToSave.setRoleList(roleRepository.findById(employeeDto.roleInt()).stream().toList());
-        employeeToSave.setClient(clientRepository.findByUsername(employeeDto.clientUsername()));
+        Employee employeeToSave = Employee.builder()
+                .username(employeeDto.username())
+                .password(passwordEncoder.encode(employeeDto.password()))
+                .roleList(roleRepository.findById(employeeDto.roleInt()).stream().toList())
+                .client(clientRepository.findByUsername(employeeDto.clientUsername()))
+                .build();
 
         employeeRepository.save(employeeToSave);
         return employeeToSave;

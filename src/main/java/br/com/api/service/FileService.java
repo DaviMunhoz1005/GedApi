@@ -3,8 +3,11 @@ package br.com.api.service;
 import br.com.api.config.FileStorageProperties;
 import br.com.api.dto.FileDto;
 import br.com.api.entities.File_;
+import br.com.api.entities.Role;
 import br.com.api.entities.User;
+import br.com.api.entities.enums.RoleName;
 import br.com.api.exception.BadRequestException;
+import br.com.api.repository.EmployeeRepository;
 import br.com.api.repository.FileRepository;
 
 import br.com.api.repository.UserRepository;
@@ -39,6 +42,7 @@ public class FileService {
     private final Path fileStorageLocation;
     private final UserRepository userRepository;
     private final UserService userService;
+    private final EmployeeRepository employeeRepository;
 
     public FileService() {
 
@@ -47,11 +51,13 @@ public class FileService {
         this.fileStorageLocation = null;
         this.userRepository = null;
         this.userService = null;
+        this.employeeRepository = null;
     }
 
     @Autowired
     public FileService(FileRepository fileRepository, FileStorageProperties fileStorageProperties,
-                       UserRepository userRepository, UserService userService) {
+                       UserRepository userRepository, UserService userService,
+                       EmployeeRepository employeeRepository) {
 
         this.fileRepository = fileRepository;
         this.fileStorageProperties = fileStorageProperties;
@@ -60,12 +66,21 @@ public class FileService {
                 .normalize();
         this.userRepository = userRepository;
         this.userService = userService;
+        this.employeeRepository = employeeRepository;
     }
 
     public List<File_> listAllFilesFromUsername(String username) {
 
         User user = userService.findUserByUsername(username);
-        return user.getFileList();
+        Role role = user.getRoleList().get(0);
+
+        if(role.getRoleName() == RoleName.CLIENT) {
+
+            return user.getFileList();
+        } else {
+
+            return employeeRepository.findByUsername(username).getClient().getFileList();
+        }
     }
 
     @Transactional

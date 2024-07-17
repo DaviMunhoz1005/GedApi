@@ -3,7 +3,6 @@ package br.com.api.controller;
 import br.com.api.dto.ClientDto;
 import br.com.api.dto.EmployeeDto;
 import br.com.api.dto.JwtResponse;
-import br.com.api.dto.UserDto;
 import br.com.api.entities.Client;
 import br.com.api.entities.Employee;
 import br.com.api.entities.User;
