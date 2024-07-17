@@ -64,8 +64,7 @@ public class UserService {
         employeeToSave.setUsername(employeeDto.username());
         employeeToSave.setPassword(passwordEncoder.encode(employeeDto.password()));
         employeeToSave.setRoleList(roleRepository.findById(employeeDto.roleInt()).stream().toList());
-        employeeToSave.setClient(clientRepository.findByUsername(employeeDto.clientUsername())
-                .orElseThrow(() -> new BadRequestException("This client name does not exist")));
+        employeeToSave.setClient(clientRepository.findByUsername(employeeDto.clientUsername()));
 
         employeeRepository.save(employeeToSave);
         return employeeToSave;
@@ -73,8 +72,18 @@ public class UserService {
 
     public User findUserByUsername(String username) {
 
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new
-                        BadRequestException("There is no user linked to the username: " + username));
+        User user = employeeRepository.findByUsername(username);
+
+        if(user == null) {
+
+            user = clientRepository.findByUsername(username);
+        }
+
+        if(user == null) {
+
+            throw new BadRequestException("There is no client linked to the username: " + username);
+        }
+
+        return user;
     }
 }

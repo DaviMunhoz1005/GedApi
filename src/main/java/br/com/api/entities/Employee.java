@@ -12,7 +12,7 @@ import lombok.*;
 @Table(name = "TB_EMPLOYEE")
 public class Employee extends User{
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "client_id")
     @NotNull(message = "The field client cannot be empty")
     private Client client;
