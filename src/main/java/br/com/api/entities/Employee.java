@@ -1,6 +1,7 @@
 package br.com.api.entities;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 @Entity
@@ -11,7 +12,8 @@ import lombok.*;
 @Table(name = "TB_EMPLOYEE")
 public class Employee extends User{
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_id")
+    @NotNull(message = "The field client cannot be empty")
     private Client client;
 }

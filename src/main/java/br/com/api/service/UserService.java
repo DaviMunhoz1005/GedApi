@@ -1,9 +1,15 @@
 package br.com.api.service;
 
+import br.com.api.dto.ClientDto;
+import br.com.api.dto.EmployeeDto;
 import br.com.api.dto.JwtResponse;
 import br.com.api.dto.UserDto;
+import br.com.api.entities.Client;
+import br.com.api.entities.Employee;
 import br.com.api.entities.User;
 import br.com.api.exception.BadRequestException;
+import br.com.api.repository.ClientRepository;
+import br.com.api.repository.EmployeeRepository;
 import br.com.api.repository.RoleRepository;
 import br.com.api.repository.UserRepository;
 
@@ -26,6 +32,8 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final ClientRepository clientRepository;
+    private final EmployeeRepository employeeRepository;
 
     public JwtResponse authenticate(Authentication authentication) {
 
@@ -39,23 +47,28 @@ public class UserService {
         return new JwtResponse(jwtService.generateToken(authentication), formattedTime);
     }
 
-    public User createUser(UserDto userDto) {
+    public Client createClient(ClientDto clientDto) {
 
-        User user = User.builder()
-                .username(userDto.username())
-                .password(userDto.password())
-                .roleList(roleRepository.findById(userDto.roleInt()).stream().toList())
-                .build();
+        Client clientToSave = new Client();
+        clientToSave.setUsername(clientDto.username());
+        clientToSave.setPassword(passwordEncoder.encode(clientDto.password()));
+        clientToSave.setRoleList(roleRepository.findById(clientDto.roleInt()).stream().toList());
 
-        User userToSave = User.builder()
-                .username(user.getUsername())
-                .password(passwordEncoder.encode(user.getPassword()))
-                .roleList(user.getRoleList())
-                .build();
+        clientRepository.save(clientToSave);
+        return clientToSave;
+    }
 
-        userRepository.save(userToSave);
+    public Employee createEmployee(EmployeeDto employeeDto) {
 
-        return userToSave;
+        Employee employeeToSave = new Employee();
+        employeeToSave.setUsername(employeeDto.username());
+        employeeToSave.setPassword(passwordEncoder.encode(employeeDto.password()));
+        employeeToSave.setRoleList(roleRepository.findById(employeeDto.roleInt()).stream().toList());
+        employeeToSave.setClient(clientRepository.findByUsername(employeeDto.clientUsername())
+                .orElseThrow(() -> new BadRequestException("This client name does not exist")));
+
+        employeeRepository.save(employeeToSave);
+        return employeeToSave;
     }
 
     public User findUserByUsername(String username) {

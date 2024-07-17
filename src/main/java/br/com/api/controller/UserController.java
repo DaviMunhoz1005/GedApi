@@ -1,7 +1,11 @@
 package br.com.api.controller;
 
+import br.com.api.dto.ClientDto;
+import br.com.api.dto.EmployeeDto;
 import br.com.api.dto.JwtResponse;
 import br.com.api.dto.UserDto;
+import br.com.api.entities.Client;
+import br.com.api.entities.Employee;
 import br.com.api.entities.User;
 import br.com.api.service.UserService;
 import jakarta.validation.Valid;
@@ -23,10 +27,16 @@ public class UserController {
         return userService.authenticate(authentication);
     }
 
-    @PostMapping(path = "create")
-    public User createUser(@Valid @RequestBody UserDto userDto) {
+    @PostMapping(path = "create/client")
+    public Client createClient(@Valid @RequestBody ClientDto clientDto) {
 
-        return userService.createUser(userDto);
+        return userService.createClient(clientDto);
+    }
+
+    @PostMapping(path = "create/employee")
+    public Employee createEmployee(@Valid @RequestBody EmployeeDto employeeDto) {
+
+        return userService.createEmployee(employeeDto);
     }
 
     @GetMapping(path = "find")
