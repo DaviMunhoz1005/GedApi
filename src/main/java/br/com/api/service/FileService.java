@@ -84,15 +84,15 @@ public class FileService {
     }
 
     @Transactional
-    public File_ addNewFile(MultipartFile multipartFile, FileDto fileDto) throws IOException {
+    public File_ addNewFile(MultipartFile multipartFile, FileDto fileDto, String username) throws IOException {
 
         String originalFileName = getOriginalFileName(multipartFile);
         String baseName = FilenameUtils.getBaseName(originalFileName);
         String extension = FilenameUtils.getExtension(originalFileName);
-        String filenameRenamed = renameFilenameToAddUserToName(baseName, fileDto.username());
+        String filenameRenamed = renameFilenameToAddUserToName(baseName, username);
 
         boolean nameAlreadyExisting = fileNameAlreadyExists(filenameRenamed);
-        boolean userExists = userExists(fileDto.username());
+        boolean userExists = userExists(username);
 
         if(!nameAlreadyExisting && userExists) {
 
@@ -103,7 +103,7 @@ public class FileService {
                     filenameRenamed, extension, fileToUpdate.getVersion(), fileToUpdate.getValidity()
             );
 
-            renameFile(fileToUpdate, fileToUpdateRenamed, fileDto.username());
+            renameFile(fileToUpdate, fileToUpdateRenamed, username);
             renamePhysicalFile(fileToUpdate, fileToUpdateRenamed);
 
             return fileToUpdate;
@@ -149,21 +149,21 @@ public class FileService {
     }
 
     @Transactional
-    public File_ updateFile(MultipartFile multipartFile, FileDto fileDto) throws IOException {
+    public File_ updateFile(MultipartFile multipartFile, FileDto fileDto, String username) throws IOException {
 
         String originalFileName = getOriginalFileName(multipartFile);
         String baseName = FilenameUtils.getBaseName(originalFileName);
 
-        String filenameRenamed = renameFilenameToAddUserToName(baseName, fileDto.username());
+        String filenameRenamed = renameFilenameToAddUserToName(baseName, username);
 
-        User user = userService.findUserByUsername(fileDto.username());
+        User user = userService.findUserByUsername(username);
         List<File_> fileListUser = user.getFileList();
 
-        List<File_> listFiles = listFilesByName(filenameRenamed, fileDto.username());
+        List<File_> listFiles = listFilesByName(filenameRenamed, username);
 
         if (listFiles.isEmpty()) {
 
-            throw new BadRequestException(exceptionReturnForEmptyList(baseName, fileDto.username()));
+            throw new BadRequestException(exceptionReturnForEmptyList(baseName, username));
         }
 
         File_ fileToUpdate = listFiles.get(listFiles.size() - 1);
@@ -173,7 +173,7 @@ public class FileService {
             throw new BadRequestException("This file has reached the limit of 10 previous versions");
         }
 
-        renameFile(fileToUpdate, constructionOfFileToUpdateRenamed(fileToUpdate), fileDto.username());
+        renameFile(fileToUpdate, constructionOfFileToUpdateRenamed(fileToUpdate), username);
 
         Files.createDirectories(fileStorageLocation);
         Path destinationFile = fileStorageLocation.resolve(originalFileName).normalize().toAbsolutePath();
