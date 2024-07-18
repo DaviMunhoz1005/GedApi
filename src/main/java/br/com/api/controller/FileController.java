@@ -9,6 +9,8 @@ import br.com.api.service.FileService;
 
 import br.com.api.service.JwtService;
 import br.com.api.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
@@ -44,6 +46,8 @@ public class FileController {
     private final JwtService jwtService;
 
     @GetMapping(path = "find")
+    @Operation(summary = "List the files the user owns", description = "Operation that lists all files that " +
+            "the user has, returns a list, which may be empty.")
     public ResponseEntity<List<File_>> listFiles() {
 
         if(tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
@@ -56,7 +60,11 @@ public class FileController {
     }
 
     @GetMapping(path = "findName")
-    public ResponseEntity<List<File_>> listFilesByName(@Valid @RequestParam String name) {
+    @Operation(summary = "List a file according to the given name", description = "Operation that lists all " +
+            "user files according to the name provided by the filename parameter, returns a list, which can" +
+            " be empty.")
+    public ResponseEntity<List<File_>> listFilesByName(@Parameter(description = "File name")
+                                                           @Valid @RequestParam String name) {
 
         if(tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
 
@@ -89,6 +97,10 @@ public class FileController {
 
     @PostMapping(path = "upload", consumes = "multipart/form-data")
     @PreAuthorize("hasAnyAuthority('SCOPE_CLIENT')")
+    @Operation(summary = "Create a new file", description = "Operation that creates a new file, receives a " +
+            "Multipartfile and a FileDto and returns the file persisted in the database. The application " +
+            "renames the sent file to save it in the database with the indexed user name, only Client type " +
+            "users can do this this request.")
     public ResponseEntity<File_> addNewFile(@RequestPart("file") MultipartFile file,
                                              @RequestPart("fileDto") FileDto fileDto) throws IOException {
 
@@ -103,6 +115,10 @@ public class FileController {
 
     @PutMapping(path = "upload", consumes = {"multipart/form-data"})
     @PreAuthorize("hasAnyAuthority('SCOPE_CLIENT')")
+    @Operation(summary = "Update a file", description = "Operation that updates a new file, receives a " +
+            "Multipartfile and a FileDto and returns the updated persisted file in the database. The " +
+            "application renames the file prior to the update to maintain a version save, only Client type " +
+            "users can make this request.")
     public ResponseEntity<File_> updateFile(@Valid @RequestPart("file") MultipartFile file,
                                             @RequestPart("json") FileDto fileDto) throws IOException {
 
@@ -117,7 +133,12 @@ public class FileController {
 
     @DeleteMapping(path = "previousVersion")
     @PreAuthorize("hasAnyAuthority('SCOPE_CLIENT')")
-    public ResponseEntity<Void> usePreviousVersion(@Valid @RequestParam String filename) {
+    @Operation(summary = "Use the previous version of the given file", description = "Operation that " +
+            "deletes the current version of the file and takes the previous version, if it exists, " +
+            "receives a parameter filename returns void, the application renames the file before the " +
+            "current one to maintain a version save, only Client type users can make this request.")
+    public ResponseEntity<Void> usePreviousVersion(@Parameter(description = "File name")
+                                                       @Valid @RequestParam String filename) {
 
         if(tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
 
@@ -131,7 +152,11 @@ public class FileController {
 
     @DeleteMapping
     @PreAuthorize("hasAnyAuthority('SCOPE_CLIENT')")
-    public ResponseEntity<Void> deleteFileByName(@Valid @RequestParam String name) {
+    @Operation(summary = "Deletes all files with a given name", description = "Operation that deletes " +
+            "all files according to the filename informed in the parameter, only Client type users can" +
+            " make this request.")
+    public ResponseEntity<Void> deleteFileByName(@Parameter(description = "File name")
+                                                     @Valid @RequestParam String name) {
 
         if(tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
 
@@ -154,7 +179,10 @@ public class FileController {
     }
 
     @GetMapping(path = "download/{fileName:.+}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable String fileName,
+    @Operation(summary = "Download a file", description = "Operation that downloads a file according to" +
+            " the name and extension passed by url.")
+    public ResponseEntity<Resource> downloadFile(@Parameter(description = "File name")
+                                                     @PathVariable String fileName,
                                                  HttpServletRequest httpServletRequest) {
         try {
 
