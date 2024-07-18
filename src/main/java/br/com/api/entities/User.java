@@ -21,7 +21,8 @@ public class User implements UserDetails {
 
     /*
     *
-    * TODO - Estudar e implementar refresh Token;
+    * TODO - Criar documentação do Spring OpenAPI Swagger;
+    *        Estudar e implementar refresh Token;
     *        Pensar na lógica de ter uma Tabela separada para as versões dos documentos;
     *
     * */
