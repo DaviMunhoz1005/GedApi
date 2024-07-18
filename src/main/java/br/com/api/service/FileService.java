@@ -89,9 +89,9 @@ public class FileService {
         String originalFileName = getOriginalFileName(multipartFile);
         String baseName = FilenameUtils.getBaseName(originalFileName);
         String extension = FilenameUtils.getExtension(originalFileName);
-        String baseNameRenamed = baseName + "-" + fileDto.username();
+        String filenameRenamed = renameFilenameToAddUserToName(baseName, fileDto.username());
 
-        boolean nameAlreadyExisting = fileNameAlreadyExists(baseNameRenamed);
+        boolean nameAlreadyExisting = fileNameAlreadyExists(filenameRenamed);
         boolean userExists = userExists(fileDto.username());
 
         if(!nameAlreadyExisting && userExists) {
@@ -100,7 +100,7 @@ public class FileService {
 
             File_ fileToUpdate = persistingTheFile(baseName, extension, fileDto.validity());
             File_ fileToUpdateRenamed = constructionOfFileToUpdateRenamed(
-                    baseNameRenamed, extension, fileToUpdate.getVersion(), fileToUpdate.getValidity()
+                    filenameRenamed, extension, fileToUpdate.getVersion(), fileToUpdate.getValidity()
             );
 
             renameFile(fileToUpdate, fileToUpdateRenamed, fileDto.username());
@@ -154,17 +154,16 @@ public class FileService {
         String originalFileName = getOriginalFileName(multipartFile);
         String baseName = FilenameUtils.getBaseName(originalFileName);
 
-        String baseNameRenamed = baseName + "-" + fileDto.username();
+        String filenameRenamed = renameFilenameToAddUserToName(baseName, fileDto.username());
 
         User user = userService.findUserByUsername(fileDto.username());
         List<File_> fileListUser = user.getFileList();
 
-        List<File_> listFiles = listFilesByName(baseNameRenamed, fileDto.username());
+        List<File_> listFiles = listFilesByName(filenameRenamed, fileDto.username());
 
         if (listFiles.isEmpty()) {
 
-            throw new BadRequestException("No files were found with the name " + baseName +
-                    " linked to the user " + fileDto.username() + ".");
+            throw new BadRequestException(exceptionReturnForEmptyList(baseName, fileDto.username()));
         }
 
         File_ fileToUpdate = listFiles.get(listFiles.size() - 1);
@@ -180,12 +179,9 @@ public class FileService {
         Path destinationFile = fileStorageLocation.resolve(originalFileName).normalize().toAbsolutePath();
         multipartFile.transferTo(destinationFile);
 
-        File_ updatedFile = persistenceOfTheUpdatedFile(baseNameRenamed, fileToUpdate, fileDto.validity());
+        File_ updatedFile = persistenceOfTheUpdatedFile(filenameRenamed, fileToUpdate, fileDto.validity());
 
         renamePhysicalFile(fileToUpdate, updatedFile, baseName);
-
-        System.out.println(fileToUpdate.getName());
-        System.out.println(updatedFile.getName());
 
         fileListUser.add(updatedFile);
         user.setFileList(fileListUser);
@@ -227,13 +223,12 @@ public class FileService {
     @Transactional
     public void usePreviousVersion(String filename, String username) {
 
-        String fileNameRenamed = filename + "-" + username;
-        List<File_> fileList = listFilesByName(fileNameRenamed, username);
+        String filenameRenamed = renameFilenameToAddUserToName(filename, username);
+        List<File_> fileList = listFilesByName(filenameRenamed, username);
 
         if(fileList.isEmpty()) {
 
-            throw new BadRequestException("No files were found with the name " + filename +
-                    " linked to the user " + username + ".");
+            throw new BadRequestException(exceptionReturnForEmptyList(filename, username));
         }
 
         if(fileList.size() == 1) {
@@ -260,7 +255,7 @@ public class FileService {
             throw new BadRequestException("Error deleting file from file system: " + file.getName());
         }
 
-        List<File_> newFileList = listFilesByName(fileNameRenamed, username);
+        List<File_> newFileList = listFilesByName(filenameRenamed, username);
         File_ fileToUpdate;
 
         if (!newFileList.isEmpty()) {
@@ -269,7 +264,7 @@ public class FileService {
 
             renameFile(file, fileToUpdate,
                     constructionOfFileToUpdateRenamed(
-                            fileNameRenamed,
+                            filenameRenamed,
                             fileToUpdate.getExtension(),
                             fileToUpdate.getVersion(),
                             fileToUpdate.getValidity()
@@ -289,15 +284,14 @@ public class FileService {
     }
 
     @Transactional
-    public void deleteAllFilesWithName(String name, String username) {
+    public void deleteAllFilesWithName(String filename, String username) {
 
-        String baseNameRenamed = name + "-" + username;
-        List<File_> fileList = listFilesByName(baseNameRenamed, username);
+        String filenameRenamed = renameFilenameToAddUserToName(filename, username);
+        List<File_> fileList = listFilesByName(filenameRenamed, username);
 
         if (fileList.isEmpty()) {
 
-            throw new BadRequestException("No files were found with the name " + name +
-                    " linked to the user " + username + ".");
+            throw new BadRequestException(exceptionReturnForEmptyList(filename, username));
         }
 
         for (File_ file : fileList) {
@@ -315,6 +309,11 @@ public class FileService {
 
             fileRepository.deleteByName(file.getName());
         }
+    }
+
+    public String renameFilenameToAddUserToName(String filename, String username) {
+
+        return filename + "-" + username;
     }
 
     public List<File_> listFilesByName(String name, String username) {
@@ -391,6 +390,11 @@ public class FileService {
         }
 
         return filesTheUserOwns;
+    }
+
+    public String exceptionReturnForEmptyList(String filename, String username) {
+
+        return "No files were found with the name " + filename + " linked to the user " + username + ".";
     }
 
     @Transactional

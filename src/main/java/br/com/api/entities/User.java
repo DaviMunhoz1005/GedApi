@@ -21,11 +21,9 @@ public class User implements UserDetails {
 
     /*
     *
-    * TODO - Implementar lógica do arquivos do cliente e do employee;
-    *        Pesquisar em como decompor um JWT em uma requisição e pegar informações dele:
-    *             - Ler postagem Medium que mostra como pegar o getSubject do Token;
-    *        Estudar e implementar refreshToken;
-    *        Pensar na lógica de outra table para version dos documentos;
+    * TODO - Pesquisar como decompor JWT, no medium usa getSubject da Claim no JwtService;
+    *        Estudar e implementar refresh Token;
+    *        Pensar na lógica de ter uma Tabela separada para as versões dos documentos;
     *
     * */
 

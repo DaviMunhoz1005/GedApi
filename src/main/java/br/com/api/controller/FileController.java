@@ -49,6 +49,14 @@ public class FileController {
     public ResponseEntity<List<File_>> listFilesByName(@Valid @RequestParam String name,
                                                        @RequestParam String username) {
 
+        User user = getTheUserRole(username);
+        String baseNameRenamed = name + "-" + user.getUsername();
+
+        return new ResponseEntity<>(fileService.listFilesByName(baseNameRenamed, username), HttpStatus.OK);
+    }
+
+    public User getTheUserRole(String username) {
+
         User user = userService.findUserByUsername(username);
         Role role = user.getRoleList().get(0);
 
@@ -60,8 +68,7 @@ public class FileController {
                     .getUsername());
         }
 
-        String baseNameRenamed = name + "-" + user.getUsername();
-        return new ResponseEntity<>(fileService.listFilesByName(baseNameRenamed, username), HttpStatus.OK);
+        return user;
     }
 
     @PostMapping(path = "upload", consumes = "multipart/form-data")
