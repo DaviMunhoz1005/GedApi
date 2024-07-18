@@ -86,29 +86,30 @@ public class FileService {
     @Transactional
     public File_ addNewFile(MultipartFile multipartFile, FileDto fileDto) throws IOException {
 
-        User user = userService.findUserByUsername(fileDto.username());
-
         String originalFileName = getOriginalFileName(multipartFile);
         String baseName = FilenameUtils.getBaseName(originalFileName);
         String extension = FilenameUtils.getExtension(originalFileName);
+        String baseNameRenamed = baseName + "-" + fileDto.username();
 
-        boolean nameAlreadyExisting = nameAlreadyExisting(baseName);
+        boolean nameAlreadyExisting = fileNameAlreadyExists(baseNameRenamed);
+        boolean userExists = userExists(fileDto.username());
 
-        if (!nameAlreadyExisting) {
+        if(!nameAlreadyExisting && userExists) {
 
             multipartFile.transferTo(takeTheDestinationPath(baseName, extension));
-            File_ fileToSave = persistingTheFile(baseName, extension, fileDto.validity());
 
-            List<File_> userFileList = user.getFileList();
-            userFileList.add(fileToSave);
+            File_ fileToUpdate = persistingTheFile(baseName, extension, fileDto.validity());
+            File_ fileToUpdateRenamed = constructionOfFileToUpdateRenamed(
+                    baseNameRenamed, extension, fileToUpdate.getVersion(), fileToUpdate.getValidity()
+            );
 
-            user.setFileList(userFileList);
-            userRepository.save(user);
+            renameFile(fileToUpdate, fileToUpdateRenamed, fileDto.username());
+            renamePhysicalFile(fileToUpdate, fileToUpdateRenamed);
 
-            return fileToSave;
+            return fileToUpdate;
         } else {
 
-            throw new BadRequestException("This file name already exists!");
+            throw new BadRequestException("This name is already used for another file, choose another name");
         }
     }
 
@@ -135,10 +136,16 @@ public class FileService {
         return fileRepository.save(fileToSave);
     }
 
-    public Boolean nameAlreadyExisting(String name) {
+    public Boolean fileNameAlreadyExists(String name) {
 
         List<File_> fileListWithThisName = fileRepository.findByName(name);
         return !fileListWithThisName.isEmpty();
+    }
+
+    public Boolean userExists(String username) {
+
+        User user = userService.findUserByUsername(username);
+        return user != null;
     }
 
     @Transactional
@@ -147,14 +154,17 @@ public class FileService {
         String originalFileName = getOriginalFileName(multipartFile);
         String baseName = FilenameUtils.getBaseName(originalFileName);
 
+        String baseNameRenamed = baseName + "-" + fileDto.username();
+
         User user = userService.findUserByUsername(fileDto.username());
         List<File_> fileListUser = user.getFileList();
 
-        List<File_> listFiles = listFilesByName(baseName, fileDto.username());
+        List<File_> listFiles = listFilesByName(baseNameRenamed, fileDto.username());
 
         if (listFiles.isEmpty()) {
 
-            throw new BadRequestException("No files found with the specified name: " + baseName);
+            throw new BadRequestException("No files were found with the name " + baseName +
+                    " linked to the user " + fileDto.username() + ".");
         }
 
         File_ fileToUpdate = listFiles.get(listFiles.size() - 1);
@@ -170,7 +180,12 @@ public class FileService {
         Path destinationFile = fileStorageLocation.resolve(originalFileName).normalize().toAbsolutePath();
         multipartFile.transferTo(destinationFile);
 
-        File_ updatedFile = persistenceOfTheUpdatedFile(baseName, fileToUpdate, fileDto.validity());
+        File_ updatedFile = persistenceOfTheUpdatedFile(baseNameRenamed, fileToUpdate, fileDto.validity());
+
+        renamePhysicalFile(fileToUpdate, updatedFile, baseName);
+
+        System.out.println(fileToUpdate.getName());
+        System.out.println(updatedFile.getName());
 
         fileListUser.add(updatedFile);
         user.setFileList(fileListUser);
@@ -212,7 +227,14 @@ public class FileService {
     @Transactional
     public void usePreviousVersion(String filename, String username) {
 
-        List<File_> fileList = listFilesByName(filename, username);
+        String fileNameRenamed = filename + "-" + username;
+        List<File_> fileList = listFilesByName(fileNameRenamed, username);
+
+        if(fileList.isEmpty()) {
+
+            throw new BadRequestException("No files were found with the name " + filename +
+                    " linked to the user " + username + ".");
+        }
 
         if(fileList.size() == 1) {
 
@@ -226,33 +248,36 @@ public class FileService {
 
         try {
 
+            fileRepository.deleteByName(file.getName());
+            if (fileRepository.findByName(file.getName()).contains(file)) {
+
+                throw new BadRequestException("Falha ao deletar o arquivo do banco de dados: " + file.getName());
+            }
+
             Files.deleteIfExists(filePath);
         } catch(IOException ioexception) {
 
             throw new BadRequestException("Error deleting file from file system: " + file.getName());
         }
 
-        fileRepository.delete(file);
-
-        List<File_> newFileList = listFilesByName(filename, username);
+        List<File_> newFileList = listFilesByName(fileNameRenamed, username);
         File_ fileToUpdate;
 
         if (!newFileList.isEmpty()) {
 
-            fileToUpdate = fileList.get(newFileList.size() - 1);
+            fileToUpdate = newFileList.get(newFileList.size() - 1);
 
             renameFile(file, fileToUpdate,
-                    constructionOfPreviousFileRenamed(
-                            filename,
+                    constructionOfFileToUpdateRenamed(
+                            fileNameRenamed,
                             fileToUpdate.getExtension(),
                             fileToUpdate.getVersion(),
                             fileToUpdate.getValidity()
-                    ),
-                    username);
+                    ), username);
         }
     }
 
-    public File_ constructionOfPreviousFileRenamed(String filename, String extension,
+    public File_ constructionOfFileToUpdateRenamed(String filename, String extension,
                                                    Integer version, LocalDate validity) {
 
         return File_.builder()
@@ -266,11 +291,13 @@ public class FileService {
     @Transactional
     public void deleteAllFilesWithName(String name, String username) {
 
-        List<File_> fileList = listFilesByName(name, username);
+        String baseNameRenamed = name + "-" + username;
+        List<File_> fileList = listFilesByName(baseNameRenamed, username);
 
         if (fileList.isEmpty()) {
 
-            throw new BadRequestException("No files found with the specified name: " + name);
+            throw new BadRequestException("No files were found with the name " + name +
+                    " linked to the user " + username + ".");
         }
 
         for (File_ file : fileList) {
@@ -286,13 +313,23 @@ public class FileService {
                 throw new BadRequestException("Error deleting file from file system: " + originalFileName);
             }
 
-            fileRepository.delete(file);
+            fileRepository.deleteByName(file.getName());
         }
     }
 
     public List<File_> listFilesByName(String name, String username) {
 
         User user = userService.findUserByUsername(username);
+        Role role = user.getRoleList().get(0);
+
+        if(role.getRoleName() == RoleName.EMPLOYEE) {
+
+            user = userService.findUserByUsername(employeeRepository
+                    .findByUsername(user.getUsername())
+                    .getClient()
+                    .getUsername());
+        }
+
         List<File_> filesFromUser = user.getFileList();
         List<File_> filenameWithVersion = new ArrayList<>();
 
@@ -394,11 +431,33 @@ public class FileService {
         userRepository.save(user);
     }
 
+    @Transactional
     public void renamePhysicalFile(File_ fileToUpdate, File_ fileToUpdateRenamed) {
 
         Path filePathStorage = fileStorageProperties.getFileStorageLocation();
 
         Path fileToRename = Paths.get(filePathStorage + "/" + fileToUpdate.getName() + "." +
+                fileToUpdate.getExtension());
+
+        Path modifiedFile = Paths.get(filePathStorage + "/" + fileToUpdateRenamed.getName() + "." +
+                fileToUpdateRenamed.getExtension());
+
+        try {
+
+            Files.move(fileToRename, modifiedFile);
+        } catch(IOException exception) {
+
+            throw new BadRequestException
+                    ("Unable to rename the file before this one for version differentiation");
+        }
+    }
+
+    @Transactional
+    public void renamePhysicalFile(File_ fileToUpdate, File_ fileToUpdateRenamed, String baseName) {
+
+        Path filePathStorage = fileStorageProperties.getFileStorageLocation();
+
+        Path fileToRename = Paths.get(filePathStorage + "/" + baseName + "." +
                 fileToUpdate.getExtension());
 
         Path modifiedFile = Paths.get(filePathStorage + "/" + fileToUpdateRenamed.getName() + "." +

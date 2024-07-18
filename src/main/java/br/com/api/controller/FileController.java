@@ -1,7 +1,12 @@
 package br.com.api.controller;
 
+import br.com.api.entities.Role;
+import br.com.api.entities.User;
+import br.com.api.entities.enums.RoleName;
+import br.com.api.repository.EmployeeRepository;
 import br.com.api.service.FileService;
 
+import br.com.api.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
@@ -31,6 +36,8 @@ import java.util.List;
 public class FileController {
 
     private final FileService fileService;
+    private final UserService userService;
+    private final EmployeeRepository employeeRepository;
 
     @GetMapping(path = "find")
     public ResponseEntity<List<File_>> listFiles(@RequestParam String username) {
@@ -42,7 +49,19 @@ public class FileController {
     public ResponseEntity<List<File_>> listFilesByName(@Valid @RequestParam String name,
                                                        @RequestParam String username) {
 
-        return new ResponseEntity<>(fileService.listFilesByName(name, username), HttpStatus.OK);
+        User user = userService.findUserByUsername(username);
+        Role role = user.getRoleList().get(0);
+
+        if(role.getRoleName() == RoleName.EMPLOYEE) {
+
+            user = userService.findUserByUsername(employeeRepository
+                    .findByUsername(user.getUsername())
+                    .getClient()
+                    .getUsername());
+        }
+
+        String baseNameRenamed = name + "-" + user.getUsername();
+        return new ResponseEntity<>(fileService.listFilesByName(baseNameRenamed, username), HttpStatus.OK);
     }
 
     @PostMapping(path = "upload", consumes = "multipart/form-data")
