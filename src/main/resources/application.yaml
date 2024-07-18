@@ -28,6 +28,12 @@ server:
 file:
   upload-directory: uploads
 
+jwt:
+  private:
+    key: classpath:app.key
+  public:
+    key: classpath:app.pub
+
 logging:
   level:
     org:

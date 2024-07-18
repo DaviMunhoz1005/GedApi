@@ -1,14 +1,19 @@
 package br.com.api.controller;
 
+import br.com.api.entities.Role;
+import br.com.api.entities.User;
+import br.com.api.entities.enums.RoleName;
+import br.com.api.repository.EmployeeRepository;
 import br.com.api.service.FileService;
 
+import br.com.api.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Controller;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import br.com.api.dto.FileDto;
@@ -25,36 +30,57 @@ import java.io.IOException;
 
 import java.util.List;
 
-@Controller
+@RestController
 @RequestMapping("/file")
 @RequiredArgsConstructor
 public class FileController {
 
     private final FileService fileService;
+    private final UserService userService;
+    private final EmployeeRepository employeeRepository;
 
-    @GetMapping
-    public ResponseEntity<List<File_>> listFiles() {
+    @GetMapping(path = "find")
+    public ResponseEntity<List<File_>> listFiles(@RequestParam String username) {
 
-        return new ResponseEntity<>(fileService.listAllFiles(), HttpStatus.OK);
+        return new ResponseEntity<>(fileService.listAllFilesFromUsername(username), HttpStatus.OK);
     }
 
-    @GetMapping(path = "param")
-    public ResponseEntity<List<File_>> listFilesByName(@Valid @RequestParam String name) {
+    @GetMapping(path = "findName")
+    public ResponseEntity<List<File_>> listFilesByName(@Valid @RequestParam String name,
+                                                       @RequestParam String username) {
 
-        return new ResponseEntity<>(fileService.listFilesByName(name), HttpStatus.OK);
+        User user = getTheUserRole(username);
+        String baseNameRenamed = name + "-" + user.getUsername();
+
+        return new ResponseEntity<>(fileService.listFilesByName(baseNameRenamed, username), HttpStatus.OK);
+    }
+
+    public User getTheUserRole(String username) {
+
+        User user = userService.findUserByUsername(username);
+        Role role = user.getRoleList().get(0);
+
+        if(role.getRoleName() == RoleName.EMPLOYEE) {
+
+            user = userService.findUserByUsername(employeeRepository
+                    .findByUsername(user.getUsername())
+                    .getClient()
+                    .getUsername());
+        }
+
+        return user;
     }
 
     @PostMapping(path = "upload", consumes = "multipart/form-data")
-    public ResponseEntity<String> addNewFile(@RequestPart("file") MultipartFile file,
+    @PreAuthorize("hasAnyAuthority('SCOPE_CLIENT')")
+    public ResponseEntity<File_> addNewFile(@RequestPart("file") MultipartFile file,
                                              @RequestPart("fileDto") FileDto fileDto) throws IOException {
 
-        String fileName = fileService.addNewFile(file, fileDto);
-
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body("Arquivo e JSON recebidos com sucesso, nome do arquivo foi salvo como: " + fileName);
+        return new ResponseEntity<>(fileService.addNewFile(file, fileDto), HttpStatus.CREATED);
     }
 
     @PutMapping(path = "upload", consumes = {"multipart/form-data"})
+    @PreAuthorize("hasAnyAuthority('SCOPE_CLIENT')")
     public ResponseEntity<File_> updateFile(@Valid @RequestPart("file") MultipartFile file,
                                             @RequestPart("json") FileDto fileDto) throws IOException {
 
@@ -86,17 +112,21 @@ public class FileController {
         }
     }
 
-    @DeleteMapping(path = "{id}")
-    public ResponseEntity<Void> deleteFileById(@Valid @PathVariable Long id) {
+    @DeleteMapping(path = "previousVersion")
+    @PreAuthorize("hasAnyAuthority('SCOPE_CLIENT')")
+    public ResponseEntity<Void> usePreviousVersion(@Valid @RequestParam String filename,
+                                                   @RequestParam String username) {
 
-        fileService.deleteFileById(id);
+        fileService.usePreviousVersion(filename, username);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @DeleteMapping
-    public ResponseEntity<Void> deleteFileByName(@Valid @RequestParam String name) {
+    @PreAuthorize("hasAnyAuthority('SCOPE_CLIENT')")
+    public ResponseEntity<Void> deleteFileByName(@Valid @RequestParam String name,
+                                                 @RequestParam String username) {
 
-        fileService.deleteFileByName(name);
+        fileService.deleteAllFilesWithName(name, username);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 }
