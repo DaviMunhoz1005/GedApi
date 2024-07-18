@@ -10,21 +10,13 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class JwtService {
 
-    /*
-    *
-    * TODO - fazer método para pegar o tempo de expiração e ver se o token expirou ou não;
-    *
-    * */
-
     private final JwtEncoder jwtEncoder;
-    private final JwtDecoder jwtDecoder;
 
     public String generateToken(Authentication authentication) {
 
@@ -45,7 +37,7 @@ public class JwtService {
 
     public Instant generateExpiryToken() {
 
-        return Instant.now().plusSeconds(3600L);
+        return Instant.now().plusSeconds(3600);
     }
 
     public String getSubjectFromAuthentication() {
@@ -59,5 +51,18 @@ public class JwtService {
         }
 
         throw new BadRequestException("Unable to decode Token");
+    }
+
+    public Instant getExpiryFromAuthentication() {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication instanceof JwtAuthenticationToken jwtAuthenticationToken) {
+
+            Jwt jwt = jwtAuthenticationToken.getToken();
+            return jwt.getExpiresAt();
+        }
+
+        throw new BadRequestException("Unable to decodasde Token");
     }
 }

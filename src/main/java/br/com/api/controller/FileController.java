@@ -3,6 +3,7 @@ package br.com.api.controller;
 import br.com.api.entities.Role;
 import br.com.api.entities.User;
 import br.com.api.entities.enums.RoleName;
+import br.com.api.exception.BadRequestException;
 import br.com.api.repository.EmployeeRepository;
 import br.com.api.service.FileService;
 
@@ -29,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 
+import java.time.Instant;
 import java.util.List;
 
 @RestController
@@ -44,6 +46,10 @@ public class FileController {
     @GetMapping(path = "find")
     public ResponseEntity<List<File_>> listFiles() {
 
+        if(tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
+
+            throw new BadRequestException(returnIfTokenIsNoLongerValid());
+        }
 
         String username = jwtService.getSubjectFromAuthentication();
         return new ResponseEntity<>(fileService.listAllFilesFromUsername(username), HttpStatus.OK);
@@ -51,6 +57,11 @@ public class FileController {
 
     @GetMapping(path = "findName")
     public ResponseEntity<List<File_>> listFilesByName(@Valid @RequestParam String name) {
+
+        if(tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
+
+            throw new BadRequestException(returnIfTokenIsNoLongerValid());
+        }
 
         String username = jwtService.getSubjectFromAuthentication();
 
@@ -81,6 +92,11 @@ public class FileController {
     public ResponseEntity<File_> addNewFile(@RequestPart("file") MultipartFile file,
                                              @RequestPart("fileDto") FileDto fileDto) throws IOException {
 
+        if(tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
+
+            throw new BadRequestException(returnIfTokenIsNoLongerValid());
+        }
+
         String username = jwtService.getSubjectFromAuthentication();
         return new ResponseEntity<>(fileService.addNewFile(file, fileDto, username), HttpStatus.CREATED);
     }
@@ -90,8 +106,51 @@ public class FileController {
     public ResponseEntity<File_> updateFile(@Valid @RequestPart("file") MultipartFile file,
                                             @RequestPart("json") FileDto fileDto) throws IOException {
 
+        if(tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
+
+            throw new BadRequestException(returnIfTokenIsNoLongerValid());
+        }
+
         String username = jwtService.getSubjectFromAuthentication();
         return new ResponseEntity<>(fileService.updateFile(file, fileDto, username), HttpStatus.OK);
+    }
+
+    @DeleteMapping(path = "previousVersion")
+    @PreAuthorize("hasAnyAuthority('SCOPE_CLIENT')")
+    public ResponseEntity<Void> usePreviousVersion(@Valid @RequestParam String filename) {
+
+        if(tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
+
+            throw new BadRequestException(returnIfTokenIsNoLongerValid());
+        }
+
+        String username = jwtService.getSubjectFromAuthentication();
+        fileService.usePreviousVersion(filename, username);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @DeleteMapping
+    @PreAuthorize("hasAnyAuthority('SCOPE_CLIENT')")
+    public ResponseEntity<Void> deleteFileByName(@Valid @RequestParam String name) {
+
+        if(tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
+
+            throw new BadRequestException(returnIfTokenIsNoLongerValid());
+        }
+
+        String username = jwtService.getSubjectFromAuthentication();
+        fileService.deleteAllFilesWithName(name, username);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    public boolean tokenIsStillValid(Instant expiresAtToken) {
+
+        return expiresAtToken.isBefore(Instant.now());
+    }
+
+    public String returnIfTokenIsNoLongerValid() {
+
+        return "Your token has run out of time, please log in again";
     }
 
     @GetMapping(path = "download/{fileName:.+}")
@@ -117,23 +176,5 @@ public class FileController {
 
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-    }
-
-    @DeleteMapping(path = "previousVersion")
-    @PreAuthorize("hasAnyAuthority('SCOPE_CLIENT')")
-    public ResponseEntity<Void> usePreviousVersion(@Valid @RequestParam String filename) {
-
-        String username = jwtService.getSubjectFromAuthentication();
-        fileService.usePreviousVersion(filename, username);
-        return new ResponseEntity<>(HttpStatus.OK);
-    }
-
-    @DeleteMapping
-    @PreAuthorize("hasAnyAuthority('SCOPE_CLIENT')")
-    public ResponseEntity<Void> deleteFileByName(@Valid @RequestParam String name) {
-
-        String username = jwtService.getSubjectFromAuthentication();
-        fileService.deleteAllFilesWithName(name, username);
-        return new ResponseEntity<>(HttpStatus.OK);
     }
 }

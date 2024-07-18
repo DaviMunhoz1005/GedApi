@@ -36,7 +36,7 @@ public class UserService {
 
     public JwtResponse authenticate(Authentication authentication) {
 
-        Instant  instant = Instant.now().plusSeconds(3600L);
+        Instant  instant = Instant.now().plusSeconds(3600);
 
         LocalTime expiresIn = instant.atZone(ZoneId.systemDefault()).toLocalTime();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
