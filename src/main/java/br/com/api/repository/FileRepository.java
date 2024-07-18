@@ -15,10 +15,10 @@ import java.util.UUID;
 @Repository
 public interface FileRepository extends JpaRepository<File_, UUID> {
 
-    List<File_> findByName(String filename);
+    List<File_> findByName(String fileName);
 
     @Modifying
     @Transactional
     @Query("DELETE FROM File_ f WHERE f.name = :name")
-    void deleteByName(@Param("name") String name);
+    void deleteByName(@Param("name") String fileName);
 }

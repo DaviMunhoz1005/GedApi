@@ -64,7 +64,7 @@ public class FileController {
             "user files according to the name provided by the filename parameter, returns a list, which can" +
             " be empty.")
     public ResponseEntity<List<File_>> listFilesByName(@Parameter(description = "File name")
-                                                           @Valid @RequestParam String name) {
+                                                           @Valid @RequestParam String fileName) {
 
         if(tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
 
@@ -74,9 +74,9 @@ public class FileController {
         String username = jwtService.getSubjectFromAuthentication();
 
         User user = getTheUserRole(username);
-        String baseNameRenamed = name + "-" + user.getUsername();
+        String fileNameRenamed = fileName + "-" + user.getUsername();
 
-        return new ResponseEntity<>(fileService.listFilesByName(baseNameRenamed, username), HttpStatus.OK);
+        return new ResponseEntity<>(fileService.listFilesByName(fileNameRenamed, username), HttpStatus.OK);
     }
 
     public User getTheUserRole(String username) {
@@ -156,7 +156,7 @@ public class FileController {
             "all files according to the filename informed in the parameter, only Client type users can" +
             " make this request.")
     public ResponseEntity<Void> deleteFileByName(@Parameter(description = "File name")
-                                                     @Valid @RequestParam String name) {
+                                                     @Valid @RequestParam String fileName) {
 
         if(tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
 
@@ -164,7 +164,7 @@ public class FileController {
         }
 
         String username = jwtService.getSubjectFromAuthentication();
-        fileService.deleteAllFilesWithName(name, username);
+        fileService.deleteAllFilesWithName(fileName, username);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
