@@ -10,7 +10,6 @@ import br.com.api.exception.BadRequestException;
 import br.com.api.repository.ClientRepository;
 import br.com.api.repository.EmployeeRepository;
 import br.com.api.repository.RoleRepository;
-import br.com.api.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -29,7 +28,6 @@ public class UserService {
 
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
-    private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final ClientRepository clientRepository;
     private final EmployeeRepository employeeRepository;
