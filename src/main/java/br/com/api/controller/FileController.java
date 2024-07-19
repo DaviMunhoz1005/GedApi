@@ -4,6 +4,8 @@ import br.com.api.entities.Role;
 import br.com.api.entities.User;
 import br.com.api.entities.enums.RoleName;
 import br.com.api.exception.BadRequestException;
+import br.com.api.exception.BadRequestExceptionDetails;
+import br.com.api.exception.ExceptionDetails;
 import br.com.api.repository.EmployeeRepository;
 import br.com.api.service.FileService;
 
@@ -11,6 +13,11 @@ import br.com.api.service.JwtService;
 import br.com.api.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
@@ -48,6 +55,13 @@ public class FileController {
     @GetMapping(path = "find")
     @Operation(summary = "List the files the user owns", description = "Operation that lists all files that " +
             "the user has, returns a list, which may be empty.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Returns a list, whether or not it is empty.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = File_.class))
+            )
+    })
     public ResponseEntity<List<File_>> listFiles() {
 
         if(tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
@@ -63,6 +77,19 @@ public class FileController {
     @Operation(summary = "List a file according to the given name", description = "Operation that lists all " +
             "user files according to the name provided by the filename parameter, returns a list, which can" +
             " be empty.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "When it finds and returns a list of the file " +
+                    "informed by parameter.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = File_.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "When you can't find any files.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = BadRequestExceptionDetails.class))
+            )
+    })
     public ResponseEntity<List<File_>> listFilesByName(@Parameter(description = "File name")
                                                            @Valid @RequestParam String fileName) {
 
@@ -101,6 +128,32 @@ public class FileController {
             "Multipartfile and a FileDto and returns the file persisted in the database. The application " +
             "renames the sent file to save it in the database with the indexed user name, only Client type " +
             "users can do this this request.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "When you successfully create a file.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = File_.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "When an invalid date is entered, outside " +
+                    "of the standards.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = BadRequestExceptionDetails.class))
+            ),
+            @ApiResponse(responseCode = "500", description = "When the user does not send a file in the request",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ExceptionDetails.class))
+            )
+    })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true, content = @Content(mediaType = "application/json e multipart/form-data",
+            examples = @ExampleObject(name = "Validity",
+                    value = "{ " +
+                            "\"validity\": \"2024-09-10\" " +
+                            "}"
+            ))
+    )
     public ResponseEntity<File_> addNewFile(@RequestPart("file") MultipartFile file,
                                              @RequestPart("fileDto") FileDto fileDto) throws IOException {
 
@@ -119,6 +172,27 @@ public class FileController {
             "Multipartfile and a FileDto and returns the updated persisted file in the database. The " +
             "application renames the file prior to the update to maintain a version save, only Client type " +
             "users can make this request.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "When can you update the file.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = File_.class))
+            ),
+            @ApiResponse(responseCode = "400", description = "When a file is not sent or when the date is " +
+                    "invalid",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = BadRequestExceptionDetails.class))
+            )
+    })
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true, content = @Content(mediaType = "application/json e multipart/form-data",
+            examples = @ExampleObject(name = "New Client",
+                    value = "{ " +
+                            "\"validity\": \"2024-09-10\" " +
+                            "}"
+            ))
+    )
     public ResponseEntity<File_> updateFile(@Valid @RequestPart("file") MultipartFile file,
                                             @RequestPart("json") FileDto fileDto) throws IOException {
 
@@ -137,6 +211,15 @@ public class FileController {
             "deletes the current version of the file and takes the previous version, if it exists, " +
             "receives a parameter filename returns void, the application renames the file before the " +
             "current one to maintain a version save, only Client type users can make this request.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "When the file is updated successfully."),
+            @ApiResponse(responseCode = "400", description = "When the file entered by the user is not " +
+                    "found or when the user does not enter a file.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = BadRequestExceptionDetails.class))
+            )
+    })
     public ResponseEntity<Void> usePreviousVersion(@Parameter(description = "File name")
                                                        @Valid @RequestParam String filename) {
 
@@ -155,6 +238,15 @@ public class FileController {
     @Operation(summary = "Deletes all files with a given name", description = "Operation that deletes " +
             "all files according to the filename informed in the parameter, only Client type users can" +
             " make this request.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "When files are successfully deleted."),
+            @ApiResponse(responseCode = "400", description = "When the informed file does not exist " +
+                    "or when a file is not informed.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = BadRequestExceptionDetails.class))
+            )
+    })
     public ResponseEntity<Void> deleteFileByName(@Parameter(description = "File name")
                                                      @Valid @RequestParam String fileName) {
 
@@ -181,6 +273,18 @@ public class FileController {
     @GetMapping(path = "download/{fileName:.+}")
     @Operation(summary = "Download a file", description = "Operation that downloads a file according to" +
             " the name and extension passed by url.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "When the file is downloaded successfully.",
+                    content = @Content(
+                            mediaType = "multipart/form-data")
+            ),
+            @ApiResponse(responseCode = "500", description = "When the informed file is not found or " +
+                    "a file is not informed.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ExceptionDetails.class))
+            )
+    })
     public ResponseEntity<Resource> downloadFile(@Parameter(description = "File name")
                                                      @PathVariable String fileName,
                                                  HttpServletRequest httpServletRequest) {

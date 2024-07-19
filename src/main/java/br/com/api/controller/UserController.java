@@ -6,7 +6,6 @@ import br.com.api.dto.JwtResponse;
 import br.com.api.entities.Client;
 import br.com.api.entities.Employee;
 import br.com.api.entities.User;
-import br.com.api.exception.BadRequestException;
 import br.com.api.exception.BadRequestExceptionDetails;
 import br.com.api.exception.UnauthorizedExceptionDetails;
 import br.com.api.service.UserService;
