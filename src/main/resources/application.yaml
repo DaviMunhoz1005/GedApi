@@ -25,7 +25,7 @@ server:
     include-stacktrace: never
   port: 8080
 
-file:
+document:
   upload-directory: uploads
 
 jwt:

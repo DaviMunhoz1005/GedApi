@@ -1,6 +1,6 @@
 package br.com.api.repository;
 
-import br.com.api.entities.File_;
+import br.com.api.entities.Document;
 
 import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,12 +13,12 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface FileRepository extends JpaRepository<File_, UUID> {
+public interface DocumentRepository extends JpaRepository<Document, UUID> {
 
-    List<File_> findByName(String fileName);
+    List<Document> findByName(String documentName);
 
     @Modifying
     @Transactional
-    @Query("DELETE FROM File_ f WHERE f.name = :name")
-    void deleteByName(@Param("name") String fileName);
+    @Query("DELETE FROM Document f WHERE f.name = :name")
+    void deleteByName(@Param("name") String documentName);
 }

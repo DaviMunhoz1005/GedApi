@@ -6,6 +6,7 @@ import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -16,12 +17,15 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "TB_USER")
-@Inheritance(strategy = InheritanceType.JOINED)
+@Builder
 public class User implements UserDetails {
 
     /*
     *
-    * TODO - Estudar e implementar refresh Token;
+    * TODO - Fazer relacionamentos com Documents;
+    *
+    *        Fazer README;
+    *        Estudar e implementar refresh Token;
     *        Pensar na lógica de ter uma Tabela separada para as versões dos documentos;
     *
     * */
@@ -34,26 +38,36 @@ public class User implements UserDetails {
     @NotNull(message = "The field username cannot be empty")
     private String username;
 
+    @NotNull(message = "The field email cannot be empty")
+    private String email;
+
     @NotNull(message = "The field password cannot be empty")
     private String password;
+
+    @NotNull(message = "The field password cannot be empty")
+    private Boolean excluded;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "USERS_ROLES",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id"))
-    private List<Role> roleList;
+    private List<Role> roleList = new ArrayList<>();
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_uuid")
-    private List<File_> fileList;
+    @JoinColumn(name = "user_uuid_creation")
+    private List<Document> listDocuments;
 
-    public User(String username, String password, List<Role> roleList) {
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_uuid_exclusion")
+    private List<Document> documentList;
 
-        this.username = username;
-        this.password = password;
-        this.roleList = roleList;
-    }
+    @ManyToMany
+    @JoinTable(
+            name = "TB_USER_CLIENT",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "client_id"))
+    private List<Client> clients;
 
     @Override
     public String getPassword() {

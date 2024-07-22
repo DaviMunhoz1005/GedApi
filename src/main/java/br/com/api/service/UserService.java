@@ -1,15 +1,12 @@
 package br.com.api.service;
 
-import br.com.api.dto.ClientDto;
-import br.com.api.dto.EmployeeDto;
+import br.com.api.dto.UserRequest;
 import br.com.api.dto.JwtResponse;
+import br.com.api.dto.UserResponse;
 import br.com.api.entities.Client;
-import br.com.api.entities.Employee;
 import br.com.api.entities.User;
-import br.com.api.exception.BadRequestException;
-import br.com.api.repository.ClientRepository;
-import br.com.api.repository.EmployeeRepository;
-import br.com.api.repository.RoleRepository;
+import br.com.api.entities.UserClient;
+import br.com.api.repository.*;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,6 +18,7 @@ import java.time.Instant;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +28,8 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
     private final ClientRepository clientRepository;
-    private final EmployeeRepository employeeRepository;
+    private final UserRepository userRepository;
+    private final UserClientRepository userClientRepository;
 
     public JwtResponse authenticate(Authentication authentication) {
 
@@ -44,45 +43,65 @@ public class UserService {
         return new JwtResponse(jwtService.generateToken(authentication), formattedTime);
     }
 
-    public Client createClient(ClientDto clientDto) {
+    public UserResponse createUser(UserRequest userRequest) {
+
+        User userToSave = User.builder()
+                .username(userRequest.username())
+                .email(userRequest.email())
+                .password(passwordEncoder.encode(userRequest.password()))
+                .excluded(false)
+                .roleList(roleRepository.findById(userRequest.roleInt()).stream().toList())
+                .clients(new ArrayList<>())
+                .build();
 
         Client clientToSave = Client.builder()
-                .username(clientDto.username())
-                .password(passwordEncoder.encode(clientDto.password()))
-                .roleList(roleRepository.findById(clientDto.roleInt()).stream().toList())
+                .nameCorporateReason(userRequest.nameCorporateReason())
+                .cnpjCpf(userRequest.cnpjCpf())
+                .cnae(userRequest.cnae())
+                .users(new ArrayList<>())
                 .build();
 
-        clientRepository.save(clientToSave);
-        return clientToSave;
-    }
+        User userSaved = userRepository.save(userToSave);
+        Client clientSaved = clientRepository.save(clientToSave);
 
-    public Employee createEmployee(EmployeeDto employeeDto) {
-
-        Employee employeeToSave = Employee.builder()
-                .username(employeeDto.username())
-                .password(passwordEncoder.encode(employeeDto.password()))
-                .roleList(roleRepository.findById(employeeDto.roleInt()).stream().toList())
-                .client(clientRepository.findByUsername(employeeDto.clientUsername()))
+        UserClient userClient = UserClient.builder()
+                .user(userSaved)
+                .client(clientSaved)
+                .approvedRequest(null)
                 .build();
+        userClientRepository.save(userClient);
 
-        employeeRepository.save(employeeToSave);
-        return employeeToSave;
+        userSaved.getClients().add(clientSaved);
+        clientSaved.getUsers().add(userSaved);
+
+        return UserResponse.builder()
+                .userId(userSaved.getUuid())
+                .clientId(clientSaved.getUuid())
+                .username(userRequest.username())
+                .nameCorporateReason(userRequest.nameCorporateReason())
+                .email(userRequest.email())
+                .cnpjCpf(userRequest.cnpjCpf())
+                .cnae(userRequest.cnae())
+                .excluded(userToSave.getExcluded())
+                .role(userToSave.getRoleList().get(0))
+                .build();
     }
 
-    public User findUserByUsername(String username) {
+    public UserResponse findUserByUsername(String username) {
 
-        User user = employeeRepository.findByUsername(username);
+        User user = userRepository.findByUsername(username);
+        Client client = userClientRepository.findByUser(user).getClient();
 
-        if(user == null) {
-
-            user = clientRepository.findByUsername(username);
-        }
-
-        if(user == null) {
-
-            throw new BadRequestException("There is no client linked to the username: " + username);
-        }
-
-        return user;
+        return UserResponse.builder()
+                .userId(user.getUuid())
+                .clientId(client.getUuid())
+                .username(username)
+                .nameCorporateReason(client.getNameCorporateReason())
+                .email(user.getEmail())
+                .cnpjCpf(client.getCnpjCpf())
+                .cnae(client.getCnae())
+                .excluded(user.getExcluded())
+                .role(user.getRoleList().get(0))
+                .build();
     }
 }
