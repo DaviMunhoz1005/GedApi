@@ -1,24 +1,32 @@
 package br.com.api.service;
 
+import br.com.api.dto.EmployeeResponse;
 import br.com.api.dto.UserRequest;
 import br.com.api.dto.JwtResponse;
 import br.com.api.dto.UserResponse;
+
 import br.com.api.entities.Client;
 import br.com.api.entities.User;
 import br.com.api.entities.UserClient;
+
+import br.com.api.exception.BadRequestException;
+
 import br.com.api.repository.*;
 
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+
 import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -93,7 +101,7 @@ public class UserService {
                     .excluded(userToSave.getExcluded())
                     .role(userToSave.getRoleList().get(0))
                     .build();
-        } else {
+        } else if(existingClient.getNameCorporateReason() != null) {
 
             userToSave = User.builder()
                     .username(userRequest.username())
@@ -128,6 +136,62 @@ public class UserService {
                     .excluded(userToSave.getExcluded())
                     .role(userToSave.getRoleList().get(0))
                     .build();
+        } else {
+
+            throw new BadRequestException("It is not permitted to link to a natural person, only to " +
+                    "legal entities");
+        }
+    }
+
+    public List<EmployeeResponse> listOfUsersWhoWantToLink(Client client) {
+
+        List<EmployeeResponse> listOfUsersWhoWantToLink = new ArrayList<>();
+        EmployeeResponse employeeResponse;
+
+        for(User user : client.getUsers()) {
+
+            if(Boolean.FALSE.equals(userClientRepository.findByUser(user).getApprovedRequest())) {
+
+                employeeResponse = EmployeeResponse.builder()
+                        .username(user.getUsername())
+                        .email(user.getEmail())
+                        .excluded(user.getExcluded())
+                        .approvedRequest(false)
+                        .build();
+
+                listOfUsersWhoWantToLink.add(employeeResponse);
+            }
+        }
+
+        return listOfUsersWhoWantToLink;
+    }
+
+    public EmployeeResponse allowUserLinking(Client client, String username) {
+
+        User userToSetApprovedRequest = null;
+
+        for(EmployeeResponse response : listOfUsersWhoWantToLink(client)) {
+
+            if(username.equals(response.username())) {
+
+                userToSetApprovedRequest = userRepository.findByUsername(response.username());
+            }
+        }
+
+        if(userToSetApprovedRequest != null) {
+
+            userClientRepository.findByUser(userToSetApprovedRequest).setApprovedRequest(true);
+            userRepository.save(userToSetApprovedRequest);
+
+            return EmployeeResponse.builder()
+                    .username(userToSetApprovedRequest.getUsername())
+                    .email(userToSetApprovedRequest.getEmail())
+                    .excluded(userToSetApprovedRequest.getExcluded())
+                    .approvedRequest(true)
+                    .build();
+        } else {
+
+            throw new BadRequestException("The username provided does not exist");
         }
     }
 

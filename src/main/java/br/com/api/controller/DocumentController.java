@@ -6,7 +6,6 @@ import br.com.api.dto.DocumentRequest;
 import br.com.api.entities.Client;
 import br.com.api.entities.Document;
 import br.com.api.entities.User;
-import br.com.api.entities.enums.RoleName;
 
 import br.com.api.exception.BadRequestException;
 
@@ -15,7 +14,6 @@ import br.com.api.repository.UserRepository;
 
 import br.com.api.service.DocumentService;
 import br.com.api.service.JwtService;
-import br.com.api.service.UserService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +35,6 @@ import jakarta.validation.Valid;
 
 import java.io.IOException;
 
-import java.time.Instant;
 import java.util.List;
 
 @RestController
@@ -46,7 +43,6 @@ import java.util.List;
 public class DocumentController {
 
     private final DocumentService documentService;
-    private final UserService userService;
     private final JwtService jwtService;
     private final UserClientRepository userClientRepository;
     private final UserRepository userRepository;
@@ -54,46 +50,63 @@ public class DocumentController {
     @GetMapping(path = "find")
     public ResponseEntity<List<Document>> listDocuments() {
 
-        if(tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
+        if(jwtService.tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
 
-            throw new BadRequestException(returnIfTokenIsNoLongerValid());
+            throw new BadRequestException(jwtService.returnIfTokenIsNoLongerValid());
         }
 
         String username = jwtService.getSubjectFromAuthentication();
-        return new ResponseEntity<>(documentService.listAllDocumentsFromUsername(username), HttpStatus.OK);
+        User user = userRepository.findByUsername(username);
+        Boolean userBindingState = userClientRepository.findByUser(user).getApprovedRequest();
+
+        if(Boolean.TRUE.equals(userBindingState) || userBindingState == null) {
+
+            return new ResponseEntity<>(documentService.listAllDocumentsFromUsername(username), HttpStatus.OK);
+        } else {
+
+            throw new BadRequestException("Your link has not yet been permitted by the legal entity");
+        }
     }
 
     @GetMapping(path = "findName")
     public ResponseEntity<List<Document>> listDocumentsByName(@Valid @RequestParam String documentName) {
 
-        if(tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
+        if(jwtService.tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
 
-            throw new BadRequestException(returnIfTokenIsNoLongerValid());
+            throw new BadRequestException(jwtService.returnIfTokenIsNoLongerValid());
         }
 
         String username = jwtService.getSubjectFromAuthentication();
-        String usernameToPutInTheDocumentName;
-
         User user = userRepository.findByUsername(username);
+        String guideName = documentName + "-" + getTheCustomerOriginalUsername(username);
+        Boolean userBindingState = userClientRepository.findByUser(user).getApprovedRequest();
 
-        if(user.getRoleList().get(0).getRoleName() == RoleName.EMPLOYEE) {
+        if(Boolean.TRUE.equals(userBindingState) || userBindingState == null) {
 
-            Client linkedClient = userClientRepository.findByUser(user).getClient();
-            User linkedUser = userClientRepository.findByClient(linkedClient).getUser();
-
-            System.out.println(linkedClient.getNameCorporateReason());
-            System.out.println(linkedUser.getUsername());
-
-            usernameToPutInTheDocumentName = linkedUser.getUsername();
+            return new ResponseEntity<>(documentService.listDocumentsByName(guideName, username),
+                    HttpStatus.OK);
         } else {
 
-            usernameToPutInTheDocumentName = user.getUsername();
+            throw new BadRequestException("Your link has not yet been permitted by the legal entity");
+        }
+    }
+
+    public String getTheCustomerOriginalUsername(String username) {
+
+        String customerOriginalUsername = "";
+
+        User user = userRepository.findByUsername(username);
+        Client client = userClientRepository.findByUser(user).getClient();
+
+        for(User finalUser : client.getUsers()) {
+
+            if(userClientRepository.findByUser(finalUser).getApprovedRequest() == null) {
+
+                customerOriginalUsername = finalUser.getUsername();
+            }
         }
 
-        String documentNameRenamed = documentName + "-" + usernameToPutInTheDocumentName;
-
-        return new ResponseEntity<>(documentService.listDocumentsByName(documentNameRenamed, username),
-                HttpStatus.OK);
+        return customerOriginalUsername;
     }
 
     @PostMapping(path = "upload", consumes = "multipart/form-data")
@@ -102,9 +115,9 @@ public class DocumentController {
                                                            @RequestPart("documentRequest") DocumentRequest request)
             throws IOException {
 
-        if(tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
+        if(jwtService.tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
 
-            throw new BadRequestException(returnIfTokenIsNoLongerValid());
+            throw new BadRequestException(jwtService.returnIfTokenIsNoLongerValid());
         }
 
         String username = jwtService.getSubjectFromAuthentication();
@@ -118,9 +131,9 @@ public class DocumentController {
                                                @RequestPart("documentRequest") DocumentRequest documentRequest)
             throws IOException {
 
-        if(tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
+        if(jwtService.tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
 
-            throw new BadRequestException(returnIfTokenIsNoLongerValid());
+            throw new BadRequestException(jwtService.returnIfTokenIsNoLongerValid());
         }
 
         String username = jwtService.getSubjectFromAuthentication();
@@ -132,9 +145,9 @@ public class DocumentController {
     @PreAuthorize("hasAnyAuthority('SCOPE_CLIENT')")
     public ResponseEntity<Void> usePreviousVersion(@Valid @RequestParam String documentName) {
 
-        if(tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
+        if(jwtService.tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
 
-            throw new BadRequestException(returnIfTokenIsNoLongerValid());
+            throw new BadRequestException(jwtService.returnIfTokenIsNoLongerValid());
         }
 
         String username = jwtService.getSubjectFromAuthentication();
@@ -146,9 +159,9 @@ public class DocumentController {
     @PreAuthorize("hasAnyAuthority('SCOPE_CLIENT')")
     public ResponseEntity<Void> deleteDocumentByName(@Valid @RequestParam String documentName) {
 
-        if(tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
+        if(jwtService.tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
 
-            throw new BadRequestException(returnIfTokenIsNoLongerValid());
+            throw new BadRequestException(jwtService.returnIfTokenIsNoLongerValid());
         }
 
         String username = jwtService.getSubjectFromAuthentication();
@@ -160,9 +173,9 @@ public class DocumentController {
     public ResponseEntity<Resource> downloadDocument(@PathVariable String documentName,
                                                  HttpServletRequest httpServletRequest) {
 
-        if(tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
+        if(jwtService.tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
 
-            throw new BadRequestException(returnIfTokenIsNoLongerValid());
+            throw new BadRequestException(jwtService.returnIfTokenIsNoLongerValid());
         }
 
         String username = jwtService.getSubjectFromAuthentication();
@@ -191,15 +204,5 @@ public class DocumentController {
 
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-    }
-
-    public boolean tokenIsStillValid(Instant expiresAtToken) {
-
-        return expiresAtToken.isBefore(Instant.now());
-    }
-
-    public String returnIfTokenIsNoLongerValid() {
-
-        return "Your token has run out of time, please log in again";
     }
 }

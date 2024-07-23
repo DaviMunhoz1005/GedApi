@@ -17,13 +17,6 @@ import java.util.UUID;
 @Builder
 public class Document {
 
-    /*
-    *
-    * TODO - checar a lógica de funcionário ver documentos do cliente vinculado;
-    *        fazer requisição de pedido para aceitar funcionário ao vinculo;
-    *
-    * */
-
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID uuid;

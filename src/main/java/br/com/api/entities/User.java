@@ -1,5 +1,6 @@
 package br.com.api.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -66,6 +67,7 @@ public class User implements UserDetails {
             name = "TB_USER_CLIENT",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "client_id"))
+    @JsonIgnore
     private List<Client> clients;
 
     @Override

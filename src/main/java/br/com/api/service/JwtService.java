@@ -63,6 +63,16 @@ public class JwtService {
             return jwt.getExpiresAt();
         }
 
-        throw new BadRequestException("Unable to decodasde Token");
+        throw new BadRequestException("Unable to decode Token");
+    }
+
+    public boolean tokenIsStillValid(Instant expiresAtToken) {
+
+        return expiresAtToken.isBefore(Instant.now());
+    }
+
+    public String returnIfTokenIsNoLongerValid() {
+
+        return "Your token has run out of time, please log in again";
     }
 }

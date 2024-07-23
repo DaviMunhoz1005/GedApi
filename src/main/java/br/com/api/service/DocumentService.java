@@ -41,12 +41,6 @@ import java.util.*;
 @Service
 public class DocumentService {
 
-    /*
-    *
-    * TODO - criar método para excluir apenas um arquivo;
-    *
-    * */
-
     private final DocumentRepository documentRepository;
     private final DocumentStorageProperties documentStorageProperties;
     private final Path documentStorageLocation;
@@ -85,8 +79,8 @@ public class DocumentService {
 
     public List<Document> listAllDocumentsFromUsername(String username) {
 
-        UserResponse userResponse = userService.findUserByUsername(username);
-        return clientRepository.findByUuid(userResponse.clientId()).getDocumentList();
+        UserResponse response = userService.findUserByUsername(username);
+        return clientRepository.findByUuid(response.clientId()).getDocumentList();
     }
 
     @Transactional
@@ -105,7 +99,7 @@ public class DocumentService {
 
         boolean nameAlreadyExisting = documentNameAlreadyExists(documentRenamed);
 
-        if(!nameAlreadyExisting) {
+        if (!nameAlreadyExisting) {
 
             multipartFile.transferTo(takeTheDestinationPath(baseName, extension));
 
@@ -254,12 +248,12 @@ public class DocumentService {
         String guideName = renameDocumentNameToAddUser(documentName, username);
         List<Document> documentListFromUserByName = listDocumentsByName(guideName, username);
 
-        if(documentListFromUserByName.isEmpty()) {
+        if (documentListFromUserByName.isEmpty()) {
 
             throw new BadRequestException(exceptionReturnForEmptyList(documentName, username));
         }
 
-        if(documentListFromUserByName.size() == 1) {
+        if (documentListFromUserByName.size() == 1) {
 
             throw new BadRequestException("This is the first version of the document");
         }
@@ -285,7 +279,7 @@ public class DocumentService {
         try {
 
             Files.deleteIfExists(documentPath);
-        } catch(IOException ioexception) {
+        } catch (IOException ioexception) {
 
             throw new BadRequestException("Error deleting document from document system: " + documentToExcludeLogically.getName());
         }
@@ -319,7 +313,7 @@ public class DocumentService {
             try {
 
                 Files.deleteIfExists(documentPath);
-            } catch(IOException ioexception) {
+            } catch (IOException ioexception) {
 
                 throw new BadRequestException("Error deleting document from document system: "
                         + originalDocumentName);
@@ -345,22 +339,23 @@ public class DocumentService {
 
     public List<Document> listDocumentsByName(String guideName, String username) {
 
-        UserResponse response = userService.findUserByUsername(username);
-        User user = userRepository.findByUsername(response.username());
-        List<Document> documentListUser = userClientRepository.findByUser(user).getClient().getDocumentList();
+        UserResponse userResponse = userService.findUserByUsername(username);
+        User user = userRepository.findByUsername(userResponse.username());
+        Client client = userClientRepository.findByUser(user).getClient();
+        List<Document> documentListClient = client.getDocumentList();
         List<Document> documentListToReturn = new ArrayList<>();
 
-        for(Document document : documentListUser) {
+        for (Document document : documentListClient) {
 
-            if(document.getGuideName().equals(guideName)) {
+            if (document.getGuideName().equals(guideName)) {
 
                 documentListToReturn.add(document);
             }
         }
 
-        for(Document document : documentListUser) {
+        for (Document document : documentListClient) {
 
-            if(document.getGuideName().contains(guideName + "_V")) {
+            if (document.getGuideName().contains(guideName + "_V")) {
 
                 documentListToReturn.add(document);
             }
@@ -395,7 +390,7 @@ public class DocumentService {
         try {
 
             Files.move(documentToRename, modifiedDocument);
-        } catch(IOException exception) {
+        } catch (IOException exception) {
 
             throw new BadRequestException
                     ("Unable to rename the document before this one for version differentiation");
