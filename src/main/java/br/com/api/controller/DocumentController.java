@@ -1,31 +1,39 @@
 package br.com.api.controller;
 
-import br.com.api.dto.UserResponse;
-import br.com.api.entities.Document;
-import br.com.api.entities.Role;
-import br.com.api.entities.enums.RoleName;
-import br.com.api.exception.BadRequestException;
-import br.com.api.service.DocumentService;
+import br.com.api.dto.DocumentResponse;
+import br.com.api.dto.DocumentRequest;
 
+import br.com.api.entities.Client;
+import br.com.api.entities.Document;
+import br.com.api.entities.User;
+import br.com.api.entities.enums.RoleName;
+
+import br.com.api.exception.BadRequestException;
+
+import br.com.api.repository.UserClientRepository;
+import br.com.api.repository.UserRepository;
+
+import br.com.api.service.DocumentService;
 import br.com.api.service.JwtService;
 import br.com.api.service.UserService;
+
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.core.io.Resource;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.RequestMapping;
-
-import br.com.api.dto.FileDto;
-
-import jakarta.validation.Valid;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+
+import org.springframework.security.access.prepost.PreAuthorize;
+
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import jakarta.validation.Valid;
 
 import java.io.IOException;
 
@@ -40,6 +48,8 @@ public class DocumentController {
     private final DocumentService documentService;
     private final UserService userService;
     private final JwtService jwtService;
+    private final UserClientRepository userClientRepository;
+    private final UserRepository userRepository;
 
     @GetMapping(path = "find")
     public ResponseEntity<List<Document>> listDocuments() {
@@ -62,30 +72,34 @@ public class DocumentController {
         }
 
         String username = jwtService.getSubjectFromAuthentication();
+        String usernameToPutInTheDocumentName;
 
-        UserResponse user = getTheUserRole(username);
-        String documentNameRenamed = documentName + "-" + user.username();
+        User user = userRepository.findByUsername(username);
 
-        return new ResponseEntity<>(documentService.listDocumentsByName(documentNameRenamed, username), HttpStatus.OK);
-    }
+        if(user.getRoleList().get(0).getRoleName() == RoleName.EMPLOYEE) {
 
-    public UserResponse getTheUserRole(String username) {
+            Client linkedClient = userClientRepository.findByUser(user).getClient();
+            User linkedUser = userClientRepository.findByClient(linkedClient).getUser();
 
-        UserResponse user = userService.findUserByUsername(username);
-        Role role = user.role();
+            System.out.println(linkedClient.getNameCorporateReason());
+            System.out.println(linkedUser.getUsername());
 
-        if(role.getRoleName() == RoleName.EMPLOYEE) {
+            usernameToPutInTheDocumentName = linkedUser.getUsername();
+        } else {
 
-            user = null;
+            usernameToPutInTheDocumentName = user.getUsername();
         }
 
-        return user;
+        String documentNameRenamed = documentName + "-" + usernameToPutInTheDocumentName;
+
+        return new ResponseEntity<>(documentService.listDocumentsByName(documentNameRenamed, username),
+                HttpStatus.OK);
     }
 
     @PostMapping(path = "upload", consumes = "multipart/form-data")
     @PreAuthorize("hasAnyAuthority('SCOPE_CLIENT')")
-    public ResponseEntity<Document> addNewDocument(@RequestPart("document") MultipartFile document,
-                                               @RequestPart("documentDto") FileDto documentDto)
+    public ResponseEntity<DocumentResponse> addNewDocument(@RequestPart("document") MultipartFile document,
+                                                           @RequestPart("documentRequest") DocumentRequest request)
             throws IOException {
 
         if(tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
@@ -94,13 +108,15 @@ public class DocumentController {
         }
 
         String username = jwtService.getSubjectFromAuthentication();
-        return new ResponseEntity<>(documentService.addNewDocument(document, documentDto, username), HttpStatus.CREATED);
+        return new ResponseEntity<>(documentService.addNewDocument(document, request, username),
+                HttpStatus.CREATED);
     }
 
     @PutMapping(path = "upload", consumes = {"multipart/form-data"})
     @PreAuthorize("hasAnyAuthority('SCOPE_CLIENT')")
-    public ResponseEntity<Document> updateDocument(@Valid @RequestPart("document") MultipartFile document,
-                                               @RequestPart("json") FileDto fileDto) throws IOException {
+    public ResponseEntity<DocumentResponse> updateDocument(@Valid @RequestPart("document") MultipartFile document,
+                                               @RequestPart("documentRequest") DocumentRequest documentRequest)
+            throws IOException {
 
         if(tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
 
@@ -108,7 +124,8 @@ public class DocumentController {
         }
 
         String username = jwtService.getSubjectFromAuthentication();
-        return new ResponseEntity<>(documentService.updateDocument(document, fileDto, username), HttpStatus.OK);
+        return new ResponseEntity<>(documentService.updateDocument(document, documentRequest, username),
+                HttpStatus.OK);
     }
 
     @DeleteMapping(path = "previousVersion")
@@ -139,22 +156,24 @@ public class DocumentController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    public boolean tokenIsStillValid(Instant expiresAtToken) {
-
-        return expiresAtToken.isBefore(Instant.now());
-    }
-
-    public String returnIfTokenIsNoLongerValid() {
-
-        return "Your token has run out of time, please log in again";
-    }
-
     @GetMapping(path = "download/{documentName:.+}")
     public ResponseEntity<Resource> downloadDocument(@PathVariable String documentName,
                                                  HttpServletRequest httpServletRequest) {
+
+        if(tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
+
+            throw new BadRequestException(returnIfTokenIsNoLongerValid());
+        }
+
+        String username = jwtService.getSubjectFromAuthentication();
+
         try {
 
-            Resource resource = documentService.downloadDocument(documentName);
+            int substringBegin = documentName.indexOf(".");
+            String guideName = documentName.substring(0, substringBegin) + "-" + username;
+
+            Resource resource = documentService.downloadDocument(guideName + "." +
+                    documentName.substring(substringBegin + 1));
 
             String contentType = httpServletRequest.getServletContext()
                     .getMimeType(resource.getFile().getAbsolutePath());
@@ -172,5 +191,15 @@ public class DocumentController {
 
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
+    }
+
+    public boolean tokenIsStillValid(Instant expiresAtToken) {
+
+        return expiresAtToken.isBefore(Instant.now());
+    }
+
+    public String returnIfTokenIsNoLongerValid() {
+
+        return "Your token has run out of time, please log in again";
     }
 }

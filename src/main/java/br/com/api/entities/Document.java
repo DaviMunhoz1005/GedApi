@@ -1,11 +1,11 @@
 package br.com.api.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -19,10 +19,8 @@ public class Document {
 
     /*
     *
-    * TODO - renomear de file para document;
-    *        fazer documentDto adequado;
-    *        Corrigir file service;
-    *        Corrigir file controller;
+    * TODO - checar a lógica de funcionário ver documentos do cliente vinculado;
+    *        fazer requisição de pedido para aceitar funcionário ao vinculo;
     *
     * */
 
@@ -58,7 +56,8 @@ public class Document {
 
     private LocalDate exclusion;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "original_document_uuid")
+    @JsonIgnore
     private Document originalDocument;
 }

@@ -1,8 +1,6 @@
 package br.com.api.entities;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
@@ -23,7 +21,6 @@ public class Client {
     private UUID uuid;
 
     @Column(name = "name_corporate_reason", unique = true)
-    @NotNull(message = "The field name_corporate_reason cannot be empty")
     private String nameCorporateReason;
 
     @Column(name = "cnpj_cpf", unique = true)

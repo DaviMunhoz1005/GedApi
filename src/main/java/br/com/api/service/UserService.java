@@ -33,7 +33,7 @@ public class UserService {
 
     public JwtResponse authenticate(Authentication authentication) {
 
-        Instant  instant = Instant.now().plusSeconds(3600);
+        Instant instant = Instant.now().plusSeconds(3600);
 
         LocalTime expiresIn = instant.atZone(ZoneId.systemDefault()).toLocalTime();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
@@ -45,46 +45,90 @@ public class UserService {
 
     public UserResponse createUser(UserRequest userRequest) {
 
-        User userToSave = User.builder()
-                .username(userRequest.username())
-                .email(userRequest.email())
-                .password(passwordEncoder.encode(userRequest.password()))
-                .excluded(false)
-                .roleList(roleRepository.findById(userRequest.roleInt()).stream().toList())
-                .clients(new ArrayList<>())
-                .build();
+        Client existingClient = clientRepository.findByCnpjCpf(userRequest.cnpjCpf());
+        User userToSave;
+        User userSaved;
+        UserClient userClient;
 
-        Client clientToSave = Client.builder()
-                .nameCorporateReason(userRequest.nameCorporateReason())
-                .cnpjCpf(userRequest.cnpjCpf())
-                .cnae(userRequest.cnae())
-                .users(new ArrayList<>())
-                .build();
+        if(existingClient == null) {
 
-        User userSaved = userRepository.save(userToSave);
-        Client clientSaved = clientRepository.save(clientToSave);
+            userToSave = User.builder()
+                    .username(userRequest.username())
+                    .email(userRequest.email())
+                    .password(passwordEncoder.encode(userRequest.password()))
+                    .excluded(false)
+                    .roleList(roleRepository.findById(1L).stream().toList())
+                    .clients(new ArrayList<>())
+                    .build();
 
-        UserClient userClient = UserClient.builder()
-                .user(userSaved)
-                .client(clientSaved)
-                .approvedRequest(null)
-                .build();
-        userClientRepository.save(userClient);
+            Client clientToSave = Client.builder()
+                    .nameCorporateReason(userRequest.nameCorporateReason())
+                    .cnpjCpf(userRequest.cnpjCpf())
+                    .cnae(userRequest.cnae())
+                    .users(new ArrayList<>())
+                    .build();
 
-        userSaved.getClients().add(clientSaved);
-        clientSaved.getUsers().add(userSaved);
+            userSaved = userRepository.save(userToSave);
+            Client clientSaved = clientRepository.save(clientToSave);
 
-        return UserResponse.builder()
-                .userId(userSaved.getUuid())
-                .clientId(clientSaved.getUuid())
-                .username(userRequest.username())
-                .nameCorporateReason(userRequest.nameCorporateReason())
-                .email(userRequest.email())
-                .cnpjCpf(userRequest.cnpjCpf())
-                .cnae(userRequest.cnae())
-                .excluded(userToSave.getExcluded())
-                .role(userToSave.getRoleList().get(0))
-                .build();
+            userClient = UserClient.builder()
+                    .user(userSaved)
+                    .client(clientSaved)
+                    .approvedRequest(null)
+                    .build();
+
+            userClientRepository.save(userClient);
+
+            userSaved.getClients().add(clientSaved);
+            clientSaved.getUsers().add(userSaved);
+
+            return UserResponse.builder()
+                    .userId(userSaved.getUuid())
+                    .clientId(clientSaved.getUuid())
+                    .username(userRequest.username())
+                    .nameCorporateReason(userRequest.nameCorporateReason())
+                    .email(userRequest.email())
+                    .cnpjCpf(userRequest.cnpjCpf())
+                    .cnae(userRequest.cnae())
+                    .excluded(userToSave.getExcluded())
+                    .role(userToSave.getRoleList().get(0))
+                    .build();
+        } else {
+
+            userToSave = User.builder()
+                    .username(userRequest.username())
+                    .email(userRequest.email())
+                    .password(passwordEncoder.encode(userRequest.password()))
+                    .excluded(false)
+                    .roleList(roleRepository.findById(2L).stream().toList())
+                    .clients(new ArrayList<>())
+                    .build();
+
+            userSaved = userRepository.save(userToSave);
+
+            userClient = UserClient.builder()
+                    .user(userSaved)
+                    .client(existingClient)
+                    .approvedRequest(false)
+                    .build();
+
+            userClientRepository.save(userClient);
+
+            userSaved.getClients().add(existingClient);
+            existingClient.getUsers().add(userSaved);
+
+            return UserResponse.builder()
+                    .userId(userSaved.getUuid())
+                    .clientId(existingClient.getUuid())
+                    .username(userRequest.username())
+                    .nameCorporateReason(userRequest.nameCorporateReason())
+                    .email(userRequest.email())
+                    .cnpjCpf(userRequest.cnpjCpf())
+                    .cnae(userRequest.cnae())
+                    .excluded(userToSave.getExcluded())
+                    .role(userToSave.getRoleList().get(0))
+                    .build();
+        }
     }
 
     public UserResponse findUserByUsername(String username) {

@@ -22,8 +22,7 @@ public class User implements UserDetails {
 
     /*
     *
-    * TODO - Fazer relacionamentos com Documents;
-    *
+    * TODO - Fazer lógica de excluir conta de acordo com as propriedades do UserDetails se possível;
     *        Fazer README;
     *        Estudar e implementar refresh Token;
     *        Pensar na lógica de ter uma Tabela separada para as versões dos documentos;
@@ -56,11 +55,11 @@ public class User implements UserDetails {
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_uuid_creation")
-    private List<Document> listDocuments;
+    private List<Document> listDocumentsCreation;
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_uuid_exclusion")
-    private List<Document> documentList;
+    private List<Document> listDocumentsExclusion;
 
     @ManyToMany
     @JoinTable(

@@ -10,4 +10,5 @@ import java.util.UUID;
 public interface ClientRepository extends JpaRepository<Client, UUID> {
 
     Client findByUuid(UUID uuid);
+    Client findByCnpjCpf(String cnpjCpf);
 }
