@@ -103,6 +103,22 @@ public class UserService {
                     .build();
         } else if(existingClient.getNameCorporateReason() != null) {
 
+            User user = null;
+
+            for(User finalUser : existingClient.getUsers()) {
+
+                if(userClientRepository.findByUser(finalUser).getApprovedRequest() == null) {
+
+                    user = finalUser;
+                }
+            }
+
+            assert user != null;
+            if(Boolean.TRUE.equals(user.getExcluded())) {
+
+                throw new BadRequestException("This user you are trying to link to has been deleted");
+            }
+
             userToSave = User.builder()
                     .username(userRequest.username())
                     .email(userRequest.email())
@@ -193,6 +209,25 @@ public class UserService {
 
             throw new BadRequestException("The username provided does not exist");
         }
+    }
+
+    public UserResponse deleteAccount(User user) {
+
+        user.setExcluded(true);
+        user.setEmail("EXCLUDED");
+        userRepository.save(user);
+
+        return UserResponse.builder()
+                .userId(user.getUuid())
+                .clientId(user.getClients().get(0).getUuid())
+                .username(user.getUsername())
+                .nameCorporateReason(user.getClients().get(0).getNameCorporateReason())
+                .email(user.getEmail())
+                .cnpjCpf(user.getClients().get(0).getCnpjCpf())
+                .cnae(user.getClients().get(0).getCnae())
+                .excluded(user.getExcluded())
+                .role(user.getRoleList().get(0))
+                .build();
     }
 
     public UserResponse findUserByUsername(String username) {

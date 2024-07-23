@@ -23,8 +23,7 @@ public class User implements UserDetails {
 
     /*
     *
-    * TODO - Fazer lógica de excluir conta de acordo com as propriedades do UserDetails se possível;
-    *        Fazer README;
+    * TODO - Fazer README;
     *        Estudar e implementar refresh Token;
     *        Pensar na lógica de ter uma Tabela separada para as versões dos documentos;
     *

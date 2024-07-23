@@ -57,6 +57,12 @@ public class DocumentController {
 
         String username = jwtService.getSubjectFromAuthentication();
         User user = userRepository.findByUsername(username);
+
+        if(Boolean.TRUE.equals(user.getExcluded())) {
+
+            throw new BadRequestException("This user has been deleted");
+        }
+
         Boolean userBindingState = userClientRepository.findByUser(user).getApprovedRequest();
 
         if(Boolean.TRUE.equals(userBindingState) || userBindingState == null) {
@@ -78,6 +84,12 @@ public class DocumentController {
 
         String username = jwtService.getSubjectFromAuthentication();
         User user = userRepository.findByUsername(username);
+
+        if(Boolean.TRUE.equals(user.getExcluded())) {
+
+            throw new BadRequestException("This user has been deleted");
+        }
+
         String guideName = documentName + "-" + getTheCustomerOriginalUsername(username);
         Boolean userBindingState = userClientRepository.findByUser(user).getApprovedRequest();
 
@@ -96,6 +108,12 @@ public class DocumentController {
         String customerOriginalUsername = "";
 
         User user = userRepository.findByUsername(username);
+
+        if(Boolean.TRUE.equals(user.getExcluded())) {
+
+            throw new BadRequestException("This user has been deleted");
+        }
+
         Client client = userClientRepository.findByUser(user).getClient();
 
         for(User finalUser : client.getUsers()) {
@@ -179,6 +197,12 @@ public class DocumentController {
         }
 
         String username = jwtService.getSubjectFromAuthentication();
+        User user = userRepository.findByUsername(username);
+
+        if(Boolean.TRUE.equals(user.getExcluded())) {
+
+            throw new BadRequestException("This user has been deleted");
+        }
 
         try {
 

@@ -7,6 +7,7 @@ import br.com.api.dto.UserResponse;
 
 import br.com.api.entities.Client;
 
+import br.com.api.entities.User;
 import br.com.api.exception.BadRequestException;
 
 import br.com.api.repository.UserClientRepository;
@@ -22,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -50,6 +52,7 @@ public class UserController {
     }
 
     @GetMapping(path = "allowUserLink")
+    @PreAuthorize("hasAnyAuthority('SCOPE_CLIENT')")
     public ResponseEntity<List<EmployeeResponse>> listOfUsersWhoWantToLink() {
 
         if(jwtService.tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
@@ -58,12 +61,20 @@ public class UserController {
         }
 
         String username = jwtService.getSubjectFromAuthentication();
-        Client client = userClientRepository.findByUser(userRepository.findByUsername(username)).getClient();
+        User user = userRepository.findByUsername(username);
+
+        if(Boolean.TRUE.equals(user.getExcluded())) {
+
+            throw new BadRequestException("This user has been deleted");
+        }
+
+        Client client = userClientRepository.findByUser(user).getClient();
 
         return new ResponseEntity<>(userService.listOfUsersWhoWantToLink(client), HttpStatus.OK);
     }
 
     @PutMapping(path = "allowUserLink")
+    @PreAuthorize("hasAnyAuthority('SCOPE_CLIENT')")
     public ResponseEntity<EmployeeResponse> allowUserLinking(@RequestParam String usernameToAllowLinking) {
 
         if(jwtService.tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
@@ -72,10 +83,36 @@ public class UserController {
         }
 
         String username = jwtService.getSubjectFromAuthentication();
-        Client client = userClientRepository.findByUser(userRepository.findByUsername(username)).getClient();
+        User user = userRepository.findByUsername(username);
+
+        if(Boolean.TRUE.equals(user.getExcluded())) {
+
+            throw new BadRequestException("This user has been deleted");
+        }
+
+        Client client = userClientRepository.findByUser(user).getClient();
 
         return new ResponseEntity<>(userService.allowUserLinking(client, usernameToAllowLinking),
                 HttpStatus.OK);
+    }
+
+    @DeleteMapping
+    public ResponseEntity<UserResponse> deleteAccount() {
+
+        if(jwtService.tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
+
+            throw new BadRequestException(jwtService.returnIfTokenIsNoLongerValid());
+        }
+
+        String username = jwtService.getSubjectFromAuthentication();
+        User user = userRepository.findByUsername(username);
+
+        if(Boolean.TRUE.equals(user.getExcluded())) {
+
+            throw new BadRequestException("This user has been deleted");
+        }
+
+        return new ResponseEntity<>(userService.deleteAccount(user), HttpStatus.OK);
     }
 
     @GetMapping(path = "find")

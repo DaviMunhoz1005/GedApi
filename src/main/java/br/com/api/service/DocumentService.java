@@ -89,6 +89,12 @@ public class DocumentService {
             throws IOException {
 
         User user = userRepository.findByUsername(username);
+
+        if(Boolean.TRUE.equals(user.getExcluded())) {
+
+            throw new BadRequestException("This user has been deleted");
+        }
+
         Client client = userClientRepository.findByUser(user).getClient();
 
         String originalDocumentName = getOriginalDocumentName(multipartFile);
@@ -169,6 +175,12 @@ public class DocumentService {
             throws IOException {
 
         User user = userRepository.findByUsername(username);
+
+        if(Boolean.TRUE.equals(user.getExcluded())) {
+
+            throw new BadRequestException("This user has been deleted");
+        }
+
         Client client = userClientRepository.findByUser(user).getClient();
 
         String originalDocumentName = getOriginalDocumentName(multipartFile);
@@ -245,6 +257,12 @@ public class DocumentService {
     public void usePreviousVersion(String documentName, String username) {
 
         User user = userRepository.findByUsername(username);
+
+        if(Boolean.TRUE.equals(user.getExcluded())) {
+
+            throw new BadRequestException("This user has been deleted");
+        }
+
         String guideName = renameDocumentNameToAddUser(documentName, username);
         List<Document> documentListFromUserByName = listDocumentsByName(guideName, username);
 
@@ -295,6 +313,12 @@ public class DocumentService {
     public void deleteAllDocumentWithName(String documentName, String username) {
 
         User user = userRepository.findByUsername(username);
+
+        if(Boolean.TRUE.equals(user.getExcluded())) {
+
+            throw new BadRequestException("This user has been deleted");
+        }
+
         String guideName = renameDocumentNameToAddUser(documentName, username);
         List<Document> documentListByName = listDocumentsByName(guideName, username);
 
@@ -341,6 +365,12 @@ public class DocumentService {
 
         UserResponse userResponse = userService.findUserByUsername(username);
         User user = userRepository.findByUsername(userResponse.username());
+
+        if(Boolean.TRUE.equals(user.getExcluded())) {
+
+            throw new BadRequestException("This user has been deleted");
+        }
+
         Client client = userClientRepository.findByUser(user).getClient();
         List<Document> documentListClient = client.getDocumentList();
         List<Document> documentListToReturn = new ArrayList<>();
