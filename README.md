@@ -148,7 +148,7 @@ Necessário Token, deleta a conta atual do Usuário informado no token e impossi
     "clientId": "4a6da36c-c5f2-445e-b5e1-3284804d76c2",
     "username": "user",
     "nameCorporateReason": null,
-    "email": "EXCLUDED",
+    "email": "user@gmail.com",
     "cnpjCpf": "2",
     "cnae": null,
     "excluded": true,
