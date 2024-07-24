@@ -132,7 +132,7 @@ Necessário Token, permiti o vínculo de um Usuário aos seus documentos.
 | :---------- | :--------- | :------------------------------------------ |
 | `usernameToAllowLinking`      | `string` | **Obrigatório**. Nome do usuário que quer permitir |
 
-### Permitir vínculo de Usuário pelo Username
+### Deleter Usuário
 
 ```
   DELETE /user
