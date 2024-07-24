@@ -29,5 +29,130 @@ Projeto em desenvolvimento que será utilizado no meu TCC da ETEC Professor Cama
   <code>Padrão Arquitetural MVC</code>
 </p>
 
+## Documentação da API
+
+### Criar novo Usuário
+
+#### Descrição
+Este endpoint permite a criação de um novo usuário no sistema. Ele requer informações básicas como nome, email, senha e cnpj ou cpf, caso o cnpj ou cpf já exista no database a criação de usuário se tornará um pedido de vinculaç
+ão a uma pessoa jurídica.
+
+```
+  POST /user/create
+```
+##### Exemplo de Requisição JSON para criar um Usuário
+
+```json
+{
+  "username": "company",
+  "nameCorporateReason": "company cool",
+  "email": "comp@gmail.com",
+  "password": "comp123",
+  "cnpjCpf": "12345678901234",
+  "cnae": "1234567"
+}
+```
+
+##### Exemplo de Requisição JSON para se vincular a um Usuário
+
+```json
+{
+  "username": "employee",
+  "email": "emp@gmail.com",
+  "password": "emp123",
+  "cnpjCpf": "12345678901234"
+}
+```
+
+### Gerar um novo Token de Acesso
+
+```
+  POST /user/token
+```
+#### Descrição
+Necessário uma autenticação básica com username e senha.
+
+##### Exemplo de Retorno
+
+```json
+{
+    "accessToken": "eyJhbGciOiJSUzI1NiJ9",
+    "expiresIn": "18:52:34"
+}
+```
+
+### Listar Usuários que querem se Vincular
+
+```
+  GET /user/allowUserLink
+```
+#### Descrição
+Necessário Token, lista os usuários que querem se vincular a sua conta.
+
+##### Exemplo de Retorno
+
+```json
+[
+    {
+        "username": "employee",
+        "email": "emp@gmail.com",
+        "excluded": false,
+        "approvedRequest": false
+    }
+]
+```
+
+### Permitir vínculo de Usuário pelo Username
+
+```
+  POST /user/allowUserLink
+```
+#### Descrição
+Necessário Token, permiti o vínculo de um Usuário aos seus documentos.
+
+##### Exemplo de Retorno
+
+```json
+[
+    {
+        "username": "employee",
+        "email": "emp@gmail.com",
+        "excluded": false,
+        "approvedRequest": true
+    }
+]
+```
+
+| Parâmetro   | Tipo       | Descrição                                   |
+| :---------- | :--------- | :------------------------------------------ |
+| `usernameToAllowLinking`      | `string` | **Obrigatório**. Nome do usuário que quer permitir |
+
+### Permitir vínculo de Usuário pelo Username
+
+```
+  DELETE /user
+```
+#### Descrição
+Necessário Token, deleta a conta atual do Usuário informado no token e impossibilita de realizar outras requisições.
+
+##### Exemplo de Retorno
+
+```json
+{
+    "userId": "730f7df2-650f-45e8-838e-c849e6981f9f",
+    "clientId": "4a6da36c-c5f2-445e-b5e1-3284804d76c2",
+    "username": "user",
+    "nameCorporateReason": null,
+    "email": "EXCLUDED",
+    "cnpjCpf": "2",
+    "cnae": null,
+    "excluded": true,
+    "role": {
+        "id": 1,
+        "roleName": "CLIENT",
+        "description": "This permission grants access to all API methods"
+    }
+}
+```
 ## 📁 Acesso ao projeto
 Você pode acessar os arquivos do projeto clicando [aqui](https://github.com/gui-lirasilva/Edige-POO/tree/master/src).
