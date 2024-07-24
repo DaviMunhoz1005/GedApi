@@ -154,5 +154,9 @@ Necessário Token, deleta a conta atual do Usuário informado no token e impossi
     }
 }
 ```
+## Próximos passos
+- [ ] Implementar lógica de RefreshToken para o JWT
+- [ ] Substituir atributo version da entidade Document para se tornar uma nova entidade e criar um relacionamento mais limpo e organizado
+
 ## 📁 Acesso ao projeto
 Você pode acessar os arquivos do projeto clicando [aqui](https://github.com/gui-lirasilva/Edige-POO/tree/master/src).
