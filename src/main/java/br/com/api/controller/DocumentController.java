@@ -35,6 +35,7 @@ import jakarta.validation.Valid;
 
 import java.io.IOException;
 
+import java.net.MalformedURLException;
 import java.util.List;
 
 @RestController
@@ -50,18 +51,12 @@ public class DocumentController {
     @GetMapping(path = "find")
     public ResponseEntity<List<Document>> listDocuments() {
 
-        if(jwtService.tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
-
-            throw new BadRequestException(jwtService.returnIfTokenIsNoLongerValid());
-        }
+        jwtService.checkIfTokenIsValid();
 
         String username = jwtService.getSubjectFromAuthentication();
         User user = userRepository.findByUsername(username);
 
-        if(Boolean.TRUE.equals(user.getExcluded())) {
-
-            throw new BadRequestException("This user has been deleted");
-        }
+        jwtService.checkIfUserWasDeleted(user);
 
         Boolean userBindingState = userClientRepository.findByUser(user).getApprovedRequest();
 
@@ -77,18 +72,12 @@ public class DocumentController {
     @GetMapping(path = "findName")
     public ResponseEntity<List<Document>> listDocumentsByName(@Valid @RequestParam String documentName) {
 
-        if(jwtService.tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
-
-            throw new BadRequestException(jwtService.returnIfTokenIsNoLongerValid());
-        }
+        jwtService.checkIfTokenIsValid();
 
         String username = jwtService.getSubjectFromAuthentication();
         User user = userRepository.findByUsername(username);
 
-        if(Boolean.TRUE.equals(user.getExcluded())) {
-
-            throw new BadRequestException("This user has been deleted");
-        }
+        jwtService.checkIfUserWasDeleted(user);
 
         String guideName = documentName + "-" + getTheCustomerOriginalUsername(username);
         Boolean userBindingState = userClientRepository.findByUser(user).getApprovedRequest();
@@ -133,10 +122,7 @@ public class DocumentController {
                                                            @RequestPart("documentRequest") DocumentRequest request)
             throws IOException {
 
-        if(jwtService.tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
-
-            throw new BadRequestException(jwtService.returnIfTokenIsNoLongerValid());
-        }
+        jwtService.checkIfTokenIsValid();
 
         String username = jwtService.getSubjectFromAuthentication();
         return new ResponseEntity<>(documentService.addNewDocument(document, request, username),
@@ -149,10 +135,7 @@ public class DocumentController {
                                                @RequestPart("documentRequest") DocumentRequest documentRequest)
             throws IOException {
 
-        if(jwtService.tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
-
-            throw new BadRequestException(jwtService.returnIfTokenIsNoLongerValid());
-        }
+        jwtService.checkIfTokenIsValid();
 
         String username = jwtService.getSubjectFromAuthentication();
         return new ResponseEntity<>(documentService.updateDocument(document, documentRequest, username),
@@ -163,10 +146,7 @@ public class DocumentController {
     @PreAuthorize("hasAnyAuthority('SCOPE_CLIENT')")
     public ResponseEntity<Void> usePreviousVersion(@Valid @RequestParam String documentName) {
 
-        if(jwtService.tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
-
-            throw new BadRequestException(jwtService.returnIfTokenIsNoLongerValid());
-        }
+        jwtService.checkIfTokenIsValid();
 
         String username = jwtService.getSubjectFromAuthentication();
         documentService.usePreviousVersion(documentName, username);
@@ -177,10 +157,7 @@ public class DocumentController {
     @PreAuthorize("hasAnyAuthority('SCOPE_CLIENT')")
     public ResponseEntity<Void> deleteDocumentByName(@Valid @RequestParam String documentName) {
 
-        if(jwtService.tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
-
-            throw new BadRequestException(jwtService.returnIfTokenIsNoLongerValid());
-        }
+        jwtService.checkIfTokenIsValid();
 
         String username = jwtService.getSubjectFromAuthentication();
         documentService.deleteAllDocumentWithName(documentName, username);
@@ -191,26 +168,16 @@ public class DocumentController {
     public ResponseEntity<Resource> downloadDocument(@PathVariable String documentName,
                                                  HttpServletRequest httpServletRequest) {
 
-        if(jwtService.tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
-
-            throw new BadRequestException(jwtService.returnIfTokenIsNoLongerValid());
-        }
+        jwtService.checkIfTokenIsValid();
 
         String username = jwtService.getSubjectFromAuthentication();
         User user = userRepository.findByUsername(username);
 
-        if(Boolean.TRUE.equals(user.getExcluded())) {
-
-            throw new BadRequestException("This user has been deleted");
-        }
+        jwtService.checkIfUserWasDeleted(user);
 
         try {
 
-            int substringBegin = documentName.indexOf(".");
-            String guideName = documentName.substring(0, substringBegin) + "-" + username;
-
-            Resource resource = documentService.downloadDocument(guideName + "." +
-                    documentName.substring(substringBegin + 1));
+            Resource resource = generateGuideNameByFileNameAndUsername(documentName, username);
 
             String contentType = httpServletRequest.getServletContext()
                     .getMimeType(resource.getFile().getAbsolutePath());
@@ -228,5 +195,15 @@ public class DocumentController {
 
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
+    }
+
+    public Resource generateGuideNameByFileNameAndUsername(String documentName, String username)
+            throws MalformedURLException {
+
+        int substringBegin = documentName.indexOf(".");
+        String guideName = documentName.substring(0, substringBegin) + "-" + username;
+
+        return documentService.downloadDocument(guideName + "." +
+                documentName.substring(substringBegin + 1));
     }
 }

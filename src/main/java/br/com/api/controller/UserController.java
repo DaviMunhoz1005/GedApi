@@ -55,18 +55,12 @@ public class UserController {
     @PreAuthorize("hasAnyAuthority('SCOPE_CLIENT')")
     public ResponseEntity<List<EmployeeResponse>> listOfUsersWhoWantToLink() {
 
-        if(jwtService.tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
-
-            throw new BadRequestException(jwtService.returnIfTokenIsNoLongerValid());
-        }
+        jwtService.checkIfTokenIsValid();
 
         String username = jwtService.getSubjectFromAuthentication();
         User user = userRepository.findByUsername(username);
 
-        if(Boolean.TRUE.equals(user.getExcluded())) {
-
-            throw new BadRequestException("This user has been deleted");
-        }
+        jwtService.checkIfUserWasDeleted(user);
 
         Client client = userClientRepository.findByUser(user).getClient();
 
@@ -77,18 +71,12 @@ public class UserController {
     @PreAuthorize("hasAnyAuthority('SCOPE_CLIENT')")
     public ResponseEntity<EmployeeResponse> allowUserLinking(@RequestParam String usernameToAllowLinking) {
 
-        if(jwtService.tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
-
-            throw new BadRequestException(jwtService.returnIfTokenIsNoLongerValid());
-        }
+        jwtService.checkIfTokenIsValid();
 
         String username = jwtService.getSubjectFromAuthentication();
         User user = userRepository.findByUsername(username);
 
-        if(Boolean.TRUE.equals(user.getExcluded())) {
-
-            throw new BadRequestException("This user has been deleted");
-        }
+        jwtService.checkIfUserWasDeleted(user);
 
         Client client = userClientRepository.findByUser(user).getClient();
 
@@ -99,10 +87,7 @@ public class UserController {
     @DeleteMapping
     public ResponseEntity<UserResponse> deleteAccount() {
 
-        if(jwtService.tokenIsStillValid(jwtService.getExpiryFromAuthentication())) {
-
-            throw new BadRequestException(jwtService.returnIfTokenIsNoLongerValid());
-        }
+        jwtService.checkIfTokenIsValid();
 
         String username = jwtService.getSubjectFromAuthentication();
         User user = userRepository.findByUsername(username);

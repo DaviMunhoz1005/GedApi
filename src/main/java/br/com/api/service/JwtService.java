@@ -1,12 +1,16 @@
 package br.com.api.service;
 
+import br.com.api.entities.User;
 import br.com.api.exception.BadRequestException;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -33,6 +37,14 @@ public class JwtService {
                 .build();
 
         return jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+    }
+
+    public void checkIfTokenIsValid() {
+
+        if(tokenIsStillValid(getExpiryFromAuthentication())) {
+
+            throw new BadRequestException(returnIfTokenIsNoLongerValid());
+        }
     }
 
     public Instant generateExpiryToken() {
@@ -74,5 +86,18 @@ public class JwtService {
     public String returnIfTokenIsNoLongerValid() {
 
         return "Your token has run out of time, please log in again";
+    }
+
+    public void checkIfUserWasDeleted(User user) {
+
+        if(Boolean.TRUE.equals(user.getExcluded())) {
+
+            throw new BadRequestException(returnIfTheUserWasDeleted());
+        }
+    }
+
+    public String returnIfTheUserWasDeleted() {
+
+        return "This user has been deleted";
     }
 }

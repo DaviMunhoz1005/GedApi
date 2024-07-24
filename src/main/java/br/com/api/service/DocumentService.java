@@ -19,6 +19,8 @@ import br.com.api.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
 
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import org.apache.commons.io.FilenameUtils;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +50,7 @@ public class DocumentService {
     private final UserRepository userRepository;
     private final UserClientRepository userClientRepository;
     private final ClientRepository clientRepository;
+    private final JwtService jwtService;
 
     public DocumentService() {
 
@@ -58,13 +61,14 @@ public class DocumentService {
         this.userRepository = null;
         this.userClientRepository = null;
         this.clientRepository = null;
+        this.jwtService = null;
     }
 
     @Autowired
     public DocumentService(DocumentRepository documentRepository,
                            DocumentStorageProperties documentStorageProperties, UserService userService,
                            UserRepository userRepository, UserClientRepository userClientRepository,
-                           ClientRepository clientRepository) {
+                           ClientRepository clientRepository, JwtService jwtService) {
 
         this.documentRepository = documentRepository;
         this.documentStorageProperties = documentStorageProperties;
@@ -75,6 +79,7 @@ public class DocumentService {
         this.userRepository = userRepository;
         this.userClientRepository = userClientRepository;
         this.clientRepository = clientRepository;
+        this.jwtService = jwtService;
     }
 
     public List<Document> listAllDocumentsFromUsername(String username) {
@@ -90,10 +95,7 @@ public class DocumentService {
 
         User user = userRepository.findByUsername(username);
 
-        if(Boolean.TRUE.equals(user.getExcluded())) {
-
-            throw new BadRequestException("This user has been deleted");
-        }
+        jwtService.checkIfUserWasDeleted(user);
 
         Client client = userClientRepository.findByUser(user).getClient();
 
@@ -123,30 +125,12 @@ public class DocumentService {
 
             documentRepository.save(documentToSave);
 
-            List<Document> documentListUser = user.getListDocumentsCreation();
-            documentListUser.add(documentToSave);
-            user.setListDocumentsCreation(documentListUser);
-
-            List<Document> documentListClient = client.getDocumentList();
-            documentListClient.add(documentToSave);
-            client.setDocumentList(documentListClient);
-
-            userRepository.save(user);
-            clientRepository.save(client);
+            linkDocumentToUserAndClient(documentToSave, user, client);
 
             renamePhysicalDocument(documentToSave.getName(), documentToSave.getGuideName(),
                     documentToSave.getExtension());
 
-            return DocumentResponse.builder()
-                    .name(documentToSave.getName())
-                    .originalDocument(documentToSave.getOriginalDocument())
-                    .extension(documentToSave.getExtension())
-                    .version(documentToSave.getVersion())
-                    .validity(documentToSave.getValidity())
-                    .creation(documentToSave.getCreation())
-                    .updated(documentToSave.getUpdated())
-                    .exclusion(documentToSave.getExclusion())
-                    .build();
+            return returnOfDocuments(documentToSave);
         } else {
 
             throw new BadRequestException("This name is already used for another document, choose another name");
@@ -176,10 +160,7 @@ public class DocumentService {
 
         User user = userRepository.findByUsername(username);
 
-        if(Boolean.TRUE.equals(user.getExcluded())) {
-
-            throw new BadRequestException("This user has been deleted");
-        }
+        jwtService.checkIfUserWasDeleted(user);
 
         Client client = userClientRepository.findByUser(user).getClient();
 
@@ -194,12 +175,7 @@ public class DocumentService {
             throw new BadRequestException(exceptionReturnForEmptyList(baseName, username));
         }
 
-        Document documentToUpdate = listDocumentsByName.get(0);
-
-        documentToUpdate.setGuideName(documentToUpdate.getGuideName() + "_V" + documentToUpdate.getVersion());
-        documentToUpdate.setUpdated(LocalDate.now());
-
-        documentRepository.save(documentToUpdate);
+        Document documentToUpdate = renameGuideNameToHaveVersion(listDocumentsByName.get(0));
 
         Document documentToSave = Document.builder()
                 .name(baseName)
@@ -215,14 +191,7 @@ public class DocumentService {
 
         documentRepository.save(documentToSave);
 
-        List<Document> documentListFromUser = user.getListDocumentsCreation();
-        List<Document> documentListFromClient = client.getDocumentList();
-
-        documentListFromUser.add(documentToSave);
-        documentListFromClient.add(documentToSave);
-
-        userRepository.save(user);
-        clientRepository.save(client);
+        linkDocumentToUserAndClient(documentToSave, user, client);
 
         Files.createDirectories(documentStorageLocation);
         Path destinationFile = documentStorageLocation.resolve(originalDocumentName).normalize().toAbsolutePath();
@@ -233,6 +202,33 @@ public class DocumentService {
 
         renamePhysicalDocument(documentToSave.getName(), documentToSave.getGuideName(),
                 documentToSave.getExtension());
+
+        return returnOfDocuments(documentToSave);
+    }
+
+    public Document renameGuideNameToHaveVersion(Document documentToUpdate) {
+
+        documentToUpdate.setGuideName(documentToUpdate.getGuideName() + "_V" + documentToUpdate.getVersion());
+        documentToUpdate.setUpdated(LocalDate.now());
+
+        return documentRepository.save(documentToUpdate);
+    }
+
+    public void linkDocumentToUserAndClient(Document documentToSave, User user, Client client) {
+
+        List<Document> documentListUser = user.getListDocumentsCreation();
+        documentListUser.add(documentToSave);
+        user.setListDocumentsCreation(documentListUser);
+
+        List<Document> documentListClient = client.getDocumentList();
+        documentListClient.add(documentToSave);
+        client.setDocumentList(documentListClient);
+
+        userRepository.save(user);
+        clientRepository.save(client);
+    }
+
+    public DocumentResponse returnOfDocuments(Document documentToSave) {
 
         return DocumentResponse.builder()
                 .name(documentToSave.getName())
@@ -258,10 +254,7 @@ public class DocumentService {
 
         User user = userRepository.findByUsername(username);
 
-        if(Boolean.TRUE.equals(user.getExcluded())) {
-
-            throw new BadRequestException("This user has been deleted");
-        }
+        jwtService.checkIfUserWasDeleted(user);
 
         String guideName = renameDocumentNameToAddUser(documentName, username);
         List<Document> documentListFromUserByName = listDocumentsByName(guideName, username);
@@ -283,16 +276,9 @@ public class DocumentService {
                 documentToExcludeLogically.getExtension();
         Path documentPath = documentStorageLocation.resolve(originalDocumentName).normalize().toAbsolutePath();
 
-        documentToExcludeLogically.setExclusion(LocalDate.now());
-        documentToExcludeLogically.setGuideName("EXCLUDED_DOCUMENT");
+        documentToExcludeLogically = deleteDocumentLogically(documentToExcludeLogically);
 
-        documentRepository.save(documentToExcludeLogically);
-
-        List<Document> documentListFromUserToExclude = user.getListDocumentsExclusion();
-        documentListFromUserToExclude.add(documentToExcludeLogically);
-        user.setListDocumentsExclusion(documentListFromUserToExclude);
-
-        userRepository.save(user);
+        linkDeletedDocumentToUser(user, documentToExcludeLogically);
 
         try {
 
@@ -304,7 +290,6 @@ public class DocumentService {
 
         renamePhysicalDocument(previousVersionDocument.getGuideName(), guideName, documentToExcludeLogically.getExtension());
 
-        previousVersionDocument.setUpdated(null);
         previousVersionDocument.setGuideName(guideName);
         documentRepository.save(previousVersionDocument);
     }
@@ -343,17 +328,33 @@ public class DocumentService {
                         + originalDocumentName);
             }
 
-            document.setExclusion(LocalDate.now());
-            document.setGuideName("EXCLUDED_DOCUMENT");
+            deleteDocumentLogically(document);
 
-            documentRepository.save(document);
-
-            List<Document> documentListFromUserToExclude = user.getListDocumentsExclusion();
-            documentListFromUserToExclude.add(document);
-            user.setListDocumentsExclusion(documentListFromUserToExclude);
-
-            userRepository.save(user);
+            linkDeletedDocumentToUser(user, document);
         }
+    }
+
+    public String exceptionReturnForEmptyList(String documentName, String username) {
+
+        return "No documents were found with the name " + documentName + " linked to the user " +
+                username + ".";
+    }
+
+    public Document deleteDocumentLogically(Document documentToExcludeLogically) {
+
+        documentToExcludeLogically.setExclusion(LocalDate.now());
+        documentToExcludeLogically.setGuideName("EXCLUDED_DOCUMENT");
+
+        return documentRepository.save(documentToExcludeLogically);
+    }
+
+    public void linkDeletedDocumentToUser(User user, Document documentToExcludeLogically) {
+
+        List<Document> documentListFromUserToExclude = user.getListDocumentsExclusion();
+        documentListFromUserToExclude.add(documentToExcludeLogically);
+        user.setListDocumentsExclusion(documentListFromUserToExclude);
+
+        userRepository.save(user);
     }
 
     public String renameDocumentNameToAddUser(String documentName, String username) {
@@ -366,13 +367,21 @@ public class DocumentService {
         UserResponse userResponse = userService.findUserByUsername(username);
         User user = userRepository.findByUsername(userResponse.username());
 
-        if(Boolean.TRUE.equals(user.getExcluded())) {
-
-            throw new BadRequestException("This user has been deleted");
-        }
+        jwtService.checkIfUserWasDeleted(user);
 
         Client client = userClientRepository.findByUser(user).getClient();
         List<Document> documentListClient = client.getDocumentList();
+        List<Document> documentListToReturn = getDocumentWithGuideNameInformed(documentListClient,
+                guideName);
+
+        documentListToReturn.addAll(listDocumentsWithVersionInName(documentListClient, guideName));
+
+        return documentListToReturn;
+    }
+
+    public List<Document> getDocumentWithGuideNameInformed(List<Document> documentListClient,
+                                                           String guideName) {
+
         List<Document> documentListToReturn = new ArrayList<>();
 
         for (Document document : documentListClient) {
@@ -383,6 +392,14 @@ public class DocumentService {
             }
         }
 
+        return documentListToReturn;
+    }
+
+    public List<Document> listDocumentsWithVersionInName(List<Document> documentListClient,
+                                                         String guideName) {
+
+        List<Document> documentListToReturn = new ArrayList<>();
+
         for (Document document : documentListClient) {
 
             if (document.getGuideName().contains(guideName + "_V")) {
@@ -392,11 +409,6 @@ public class DocumentService {
         }
 
         return documentListToReturn;
-    }
-
-    public String exceptionReturnForEmptyList(String documentName, String username) {
-
-        return "No documents were found with the name " + documentName + " linked to the user " + username + ".";
     }
 
     @Transactional

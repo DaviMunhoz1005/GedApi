@@ -54,109 +54,116 @@ public class UserService {
     public UserResponse createUser(UserRequest userRequest) {
 
         Client existingClient = clientRepository.findByCnpjCpf(userRequest.cnpjCpf());
-        User userToSave;
-        User userSaved;
-        UserClient userClient;
 
         if(existingClient == null) {
 
-            userToSave = User.builder()
-                    .username(userRequest.username())
-                    .email(userRequest.email())
-                    .password(passwordEncoder.encode(userRequest.password()))
-                    .excluded(false)
-                    .roleList(roleRepository.findById(1L).stream().toList())
-                    .clients(new ArrayList<>())
-                    .build();
-
-            Client clientToSave = Client.builder()
-                    .nameCorporateReason(userRequest.nameCorporateReason())
-                    .cnpjCpf(userRequest.cnpjCpf())
-                    .cnae(userRequest.cnae())
-                    .users(new ArrayList<>())
-                    .build();
-
-            userSaved = userRepository.save(userToSave);
-            Client clientSaved = clientRepository.save(clientToSave);
-
-            userClient = UserClient.builder()
-                    .user(userSaved)
-                    .client(clientSaved)
-                    .approvedRequest(null)
-                    .build();
-
-            userClientRepository.save(userClient);
-
-            userSaved.getClients().add(clientSaved);
-            clientSaved.getUsers().add(userSaved);
-
-            return UserResponse.builder()
-                    .userId(userSaved.getUuid())
-                    .clientId(clientSaved.getUuid())
-                    .username(userRequest.username())
-                    .nameCorporateReason(userRequest.nameCorporateReason())
-                    .email(userRequest.email())
-                    .cnpjCpf(userRequest.cnpjCpf())
-                    .cnae(userRequest.cnae())
-                    .excluded(userToSave.getExcluded())
-                    .role(userToSave.getRoleList().get(0))
-                    .build();
+            return createNewClient(userRequest);
         } else if(existingClient.getNameCorporateReason() != null) {
 
-            User user = null;
-
-            for(User finalUser : existingClient.getUsers()) {
-
-                if(userClientRepository.findByUser(finalUser).getApprovedRequest() == null) {
-
-                    user = finalUser;
-                }
-            }
-
-            assert user != null;
-            if(Boolean.TRUE.equals(user.getExcluded())) {
-
-                throw new BadRequestException("This user you are trying to link to has been deleted");
-            }
-
-            userToSave = User.builder()
-                    .username(userRequest.username())
-                    .email(userRequest.email())
-                    .password(passwordEncoder.encode(userRequest.password()))
-                    .excluded(false)
-                    .roleList(roleRepository.findById(2L).stream().toList())
-                    .clients(new ArrayList<>())
-                    .build();
-
-            userSaved = userRepository.save(userToSave);
-
-            userClient = UserClient.builder()
-                    .user(userSaved)
-                    .client(existingClient)
-                    .approvedRequest(false)
-                    .build();
-
-            userClientRepository.save(userClient);
-
-            userSaved.getClients().add(existingClient);
-            existingClient.getUsers().add(userSaved);
-
-            return UserResponse.builder()
-                    .userId(userSaved.getUuid())
-                    .clientId(existingClient.getUuid())
-                    .username(userRequest.username())
-                    .nameCorporateReason(userRequest.nameCorporateReason())
-                    .email(userRequest.email())
-                    .cnpjCpf(userRequest.cnpjCpf())
-                    .cnae(userRequest.cnae())
-                    .excluded(userToSave.getExcluded())
-                    .role(userToSave.getRoleList().get(0))
-                    .build();
+            return createNewEmployee(existingClient, userRequest);
         } else {
 
             throw new BadRequestException("It is not permitted to link to a natural person, only to " +
                     "legal entities");
         }
+    }
+
+    public UserResponse createNewClient(UserRequest userRequest) {
+
+        User userToSave = User.builder()
+                .username(userRequest.username())
+                .email(userRequest.email())
+                .password(passwordEncoder.encode(userRequest.password()))
+                .excluded(false)
+                .roleList(roleRepository.findById(1L).stream().toList())
+                .clients(new ArrayList<>())
+                .build();
+
+        Client clientToSave = Client.builder()
+                .nameCorporateReason(userRequest.nameCorporateReason())
+                .cnpjCpf(userRequest.cnpjCpf())
+                .cnae(userRequest.cnae())
+                .users(new ArrayList<>())
+                .build();
+
+        User userSaved = userRepository.save(userToSave);
+        Client clientSaved = clientRepository.save(clientToSave);
+
+        UserClient userClient = UserClient.builder()
+                .user(userSaved)
+                .client(clientSaved)
+                .approvedRequest(null)
+                .build();
+
+        userClientRepository.save(userClient);
+
+        userSaved.getClients().add(clientSaved);
+        clientSaved.getUsers().add(userSaved);
+
+        return UserResponse.builder()
+                .userId(userSaved.getUuid())
+                .clientId(clientSaved.getUuid())
+                .username(userRequest.username())
+                .nameCorporateReason(userRequest.nameCorporateReason())
+                .email(userRequest.email())
+                .cnpjCpf(userRequest.cnpjCpf())
+                .cnae(userRequest.cnae())
+                .excluded(userToSave.getExcluded())
+                .role(userToSave.getRoleList().get(0))
+                .build();
+    }
+
+    public UserResponse createNewEmployee(Client existingClient, UserRequest userRequest) {
+
+        User user = null;
+
+        for(User finalUser : existingClient.getUsers()) {
+
+            if(userClientRepository.findByUser(finalUser).getApprovedRequest() == null) {
+
+                user = finalUser;
+            }
+        }
+
+        assert user != null;
+        if(Boolean.TRUE.equals(user.getExcluded())) {
+
+            throw new BadRequestException("This user you are trying to link to has been deleted");
+        }
+
+        User userToSave = User.builder()
+                .username(userRequest.username())
+                .email(userRequest.email())
+                .password(passwordEncoder.encode(userRequest.password()))
+                .excluded(false)
+                .roleList(roleRepository.findById(2L).stream().toList())
+                .clients(new ArrayList<>())
+                .build();
+
+        User userSaved = userRepository.save(userToSave);
+
+        UserClient userClient = UserClient.builder()
+                .user(userSaved)
+                .client(existingClient)
+                .approvedRequest(false)
+                .build();
+
+        userClientRepository.save(userClient);
+
+        userSaved.getClients().add(existingClient);
+        existingClient.getUsers().add(userSaved);
+
+        return UserResponse.builder()
+                .userId(userSaved.getUuid())
+                .clientId(existingClient.getUuid())
+                .username(userRequest.username())
+                .nameCorporateReason(userRequest.nameCorporateReason())
+                .email(userRequest.email())
+                .cnpjCpf(userRequest.cnpjCpf())
+                .cnae(userRequest.cnae())
+                .excluded(userToSave.getExcluded())
+                .role(userToSave.getRoleList().get(0))
+                .build();
     }
 
     public List<EmployeeResponse> listOfUsersWhoWantToLink(Client client) {
