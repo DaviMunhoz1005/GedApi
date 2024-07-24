@@ -1,11 +1,13 @@
 package br.com.api.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -16,12 +18,12 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "TB_USER")
-@Inheritance(strategy = InheritanceType.JOINED)
+@Builder
 public class User implements UserDetails {
 
     /*
     *
-    * TODO - Pesquisar como decompor JWT, no medium usa getSubject da Claim no JwtService;
+    * TODO - Fazer README;
     *        Estudar e implementar refresh Token;
     *        Pensar na lógica de ter uma Tabela separada para as versões dos documentos;
     *
@@ -35,26 +37,37 @@ public class User implements UserDetails {
     @NotNull(message = "The field username cannot be empty")
     private String username;
 
+    @NotNull(message = "The field email cannot be empty")
+    private String email;
+
     @NotNull(message = "The field password cannot be empty")
     private String password;
+
+    @NotNull(message = "The field password cannot be empty")
+    private Boolean excluded;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "USERS_ROLES",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id"))
-    private List<Role> roleList;
+    private List<Role> roleList = new ArrayList<>();
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_uuid")
-    private List<File_> fileList;
+    @JoinColumn(name = "user_uuid_creation")
+    private List<Document> listDocumentsCreation;
 
-    public User(String username, String password, List<Role> roleList) {
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_uuid_exclusion")
+    private List<Document> listDocumentsExclusion;
 
-        this.username = username;
-        this.password = password;
-        this.roleList = roleList;
-    }
+    @ManyToMany
+    @JoinTable(
+            name = "TB_USER_CLIENT",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "client_id"))
+    @JsonIgnore
+    private List<Client> clients;
 
     @Override
     public String getPassword() {
@@ -76,12 +89,3 @@ public class User implements UserDetails {
                 .toList();
     }
 }
-/*
-
-    TODO - Implementar lógica do arquivos do cliente e do employee;
-           Pesquisar em como decompor um JWT em uma requisição e pegar informações dele:
-                    - Ler postagem Medium que mostra como pegar o getSubject do Token;
-           Estudar e implementar refreshToken;
-           Pensar na lógica de outra table para version dos documentos;
-
-    */

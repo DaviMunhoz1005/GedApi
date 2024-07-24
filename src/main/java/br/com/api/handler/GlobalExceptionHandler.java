@@ -1,9 +1,6 @@
 package br.com.api.handler;
 
-import br.com.api.exception.BadRequestException;
-import br.com.api.exception.BadRequestExceptionDetails;
-import br.com.api.exception.ExceptionDetails;
-import br.com.api.exception.ValidationExceptionDetails;
+import br.com.api.exception.*;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -28,18 +25,13 @@ import java.util.stream.Collectors;
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    /*
-    *
-    * TODO - criar exceção personalizada para 401 Unauthorized
-    *
-    * */
-
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     LocalDateTime localDateTime = LocalDateTime.now();
     String formattedTime = localDateTime.format(formatter);
 
     @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<BadRequestExceptionDetails> handleBadRequestException(BadRequestException exception) {
+    public ResponseEntity<BadRequestExceptionDetails> handleBadRequestException(
+            BadRequestException exception) {
 
         return new ResponseEntity<>(
                 BadRequestExceptionDetails.builder()
@@ -56,7 +48,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             HttpStatusCode status, WebRequest request) {
 
         List<FieldError> fieldErrors = exception.getBindingResult().getFieldErrors();
-        String fields = fieldErrors.stream().map(FieldError::getField).collect(Collectors.joining(", "));
+        String fields = fieldErrors.stream().map(FieldError::getField).
+                collect(Collectors.joining(", "));
         String fieldsMessage = fieldErrors.stream().map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(", "));
         return new ResponseEntity<>(

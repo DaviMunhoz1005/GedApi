@@ -10,14 +10,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 @Configuration
-@ConfigurationProperties(prefix = "file")
+@ConfigurationProperties(prefix = "document")
 @Getter
 @Setter
-public class FileStorageProperties {
+public class DocumentStorageProperties {
 
     private String uploadDirectory;
 
-    public Path getFileStorageLocation() {
+    public Path getDocumentStorageLocation() {
         return Paths.get(uploadDirectory)
                 .toAbsolutePath()
                 .normalize();

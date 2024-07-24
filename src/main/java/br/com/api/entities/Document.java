@@ -1,5 +1,6 @@
 package br.com.api.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -12,9 +13,9 @@ import java.util.UUID;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "TB_FILE")
+@Table(name = "TB_DOCUMENT")
 @Builder
-public class File_ {
+public class Document {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -24,6 +25,10 @@ public class File_ {
     @Column(nullable = false)
     private String name;
 
+    @NotNull(message = "The field guide name cannot be empty")
+    @Column(nullable = false)
+    private String guideName;
+
     @NotNull(message = "The field extension cannot be empty")
     @Column(nullable = false)
     private String extension;
@@ -32,7 +37,20 @@ public class File_ {
     @Column(nullable = false)
     private Integer version;
 
-    @NotNull(message = "The field validity cannot be empty")
+    @NotNull(message = "The field validity date cannot be empty")
     @Column(nullable = false)
     private LocalDate validity;
+
+    @NotNull(message = "The field creation date cannot be empty")
+    @Column(nullable = false)
+    private LocalDate creation;
+
+    private LocalDate updated;
+
+    private LocalDate exclusion;
+
+    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinColumn(name = "original_document_uuid")
+    @JsonIgnore
+    private Document originalDocument;
 }
