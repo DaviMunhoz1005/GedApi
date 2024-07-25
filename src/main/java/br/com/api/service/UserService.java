@@ -1,9 +1,6 @@
 package br.com.api.service;
 
-import br.com.api.dto.EmployeeResponse;
-import br.com.api.dto.UserRequest;
-import br.com.api.dto.JwtResponse;
-import br.com.api.dto.UserResponse;
+import br.com.api.dto.*;
 
 import br.com.api.entities.Client;
 import br.com.api.entities.User;
@@ -15,6 +12,7 @@ import br.com.api.repository.*;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -39,7 +37,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserClientRepository userClientRepository;
 
-    public JwtResponse authenticate(Authentication authentication) {
+    public JwtResponse authenticate(JwtRequest jwtRequest) {
 
         Instant instant = Instant.now().plusSeconds(3600);
 
@@ -48,7 +46,10 @@ public class UserService {
 
         String formattedTime = expiresIn.format(formatter);
 
-        return new JwtResponse(jwtService.generateToken(authentication), formattedTime);
+        User user = userRepository.findByUsername(jwtRequest.username());
+
+        return new JwtResponse(jwtService.generateToken(jwtRequest.username(), user.getRoleList().get(0).getRoleName()),
+                formattedTime);
     }
 
     public UserResponse createUser(UserRequest userRequest) {
@@ -221,7 +222,6 @@ public class UserService {
     public UserResponse deleteAccount(User user) {
 
         user.setExcluded(true);
-        user.setEmail("EXCLUDED");
         userRepository.save(user);
 
         return UserResponse.builder()

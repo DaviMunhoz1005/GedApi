@@ -1,9 +1,6 @@
 package br.com.api.controller;
 
-import br.com.api.dto.EmployeeResponse;
-import br.com.api.dto.UserRequest;
-import br.com.api.dto.JwtResponse;
-import br.com.api.dto.UserResponse;
+import br.com.api.dto.*;
 
 import br.com.api.entities.Client;
 
@@ -40,9 +37,9 @@ public class UserController {
     private final UserRepository userRepository;
 
     @PostMapping(path = "token")
-    public JwtResponse authenticate(Authentication authentication) {
+    public JwtResponse authenticate(@RequestBody JwtRequest jwtRequest) {
 
-        return userService.authenticate(authentication);
+        return userService.authenticate(jwtRequest);
     }
 
     @PostMapping(path = "create")

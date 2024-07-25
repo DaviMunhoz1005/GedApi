@@ -1,6 +1,9 @@
 package br.com.api.service;
 
+import br.com.api.dto.JwtRequest;
+import br.com.api.entities.Role;
 import br.com.api.entities.User;
+import br.com.api.entities.enums.RoleName;
 import br.com.api.exception.BadRequestException;
 
 import lombok.RequiredArgsConstructor;
@@ -22,17 +25,15 @@ public class JwtService {
 
     private final JwtEncoder jwtEncoder;
 
-    public String generateToken(Authentication authentication) {
+    public String generateToken(String username, RoleName roleName) {
 
-        String scopes = authentication.getAuthorities().stream()
-                .map(GrantedAuthority :: getAuthority)
-                .collect(Collectors.joining(" "));
+        String scopes = roleName.name();
 
         var claims = JwtClaimsSet.builder()
                 .issuer("DownloadAndUploadAPI")
                 .issuedAt(Instant.now())
                 .expiresAt(generateExpiryToken())
-                .subject(authentication.getName())
+                .subject(username)
                 .claim("scope", scopes)
                 .build();
 

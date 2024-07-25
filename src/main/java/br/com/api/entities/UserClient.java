@@ -19,11 +19,11 @@ public class UserClient {
     private UUID uuid;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_uuid", nullable = false)
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "client_id", nullable = false)
+    @JoinColumn(name = "client_uuid", nullable = false)
     private Client client;
 
     @Column(name = "approved_request")

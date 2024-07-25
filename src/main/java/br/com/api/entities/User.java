@@ -23,8 +23,7 @@ public class User implements UserDetails {
 
     /*
     *
-    * TODO - Fazer README;
-    *        Estudar e implementar refresh Token;
+    * TODO - Estudar e implementar refresh Token;
     *        Pensar na lógica de ter uma Tabela separada para as versões dos documentos;
     *
     * */
@@ -64,8 +63,8 @@ public class User implements UserDetails {
     @ManyToMany
     @JoinTable(
             name = "TB_USER_CLIENT",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "client_id"))
+            joinColumns = @JoinColumn(name = "user_uuid"),
+            inverseJoinColumns = @JoinColumn(name = "client_uuid"))
     @JsonIgnore
     private List<Client> clients;
 
