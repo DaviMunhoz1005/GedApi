@@ -357,6 +357,7 @@ Necessário Token, faz Download do Documento informado pelo Usuário.
 | `documentName`      | `string` | **Obrigatório**. Nome do Documento que quer baixar e a extensão dele junto, exemplo: test.txt |
 
 ## Próximos passos
+- [ ] Fazer requisição para passar username e password em JSON e retornar o token de acesso;
 - [ ] Implementar lógica de RefreshToken para o JWT
 - [ ] Substituir atributo version da entidade Document para se tornar uma nova entidade e criar um relacionamento mais limpo e organizado
 
