@@ -1,15 +1,12 @@
 package br.com.api.service;
 
-import br.com.api.dto.JwtRequest;
-import br.com.api.entities.Role;
-import br.com.api.entities.User;
-import br.com.api.entities.enums.RoleName;
+import br.com.api.domain.entities.Users;
+import br.com.api.domain.enums.RoleName;
 import br.com.api.exception.BadRequestException;
 
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -17,7 +14,6 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -89,7 +85,7 @@ public class JwtService {
         return "Your token has run out of time, please log in again";
     }
 
-    public void checkIfUserWasDeleted(User user) {
+    public void checkIfUserWasDeleted(Users user) {
 
         if(Boolean.TRUE.equals(user.getExcluded())) {
 

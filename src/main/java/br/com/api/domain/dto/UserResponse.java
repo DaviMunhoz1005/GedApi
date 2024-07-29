@@ -1,6 +1,6 @@
-package br.com.api.dto;
+package br.com.api.domain.dto;
 
-import br.com.api.entities.Role;
+import br.com.api.domain.entities.Roles;
 import lombok.Builder;
 
 import java.util.UUID;
@@ -24,5 +24,5 @@ public record UserResponse(
 
         Boolean excluded,
 
-        Role role) {
+        Roles role) {
 }

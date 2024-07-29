@@ -1,6 +1,6 @@
-package br.com.api.dto;
+package br.com.api.domain.dto;
 
-import br.com.api.entities.Document;
+import br.com.api.domain.entities.Documents;
 import lombok.Builder;
 
 import java.time.LocalDate;
@@ -10,7 +10,7 @@ public record DocumentResponse(
 
         String name,
 
-        Document originalDocument,
+        Documents originalDocument,
 
         String extension,
 

@@ -1,4 +1,4 @@
-package br.com.api.entities;
+package br.com.api.domain.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -20,11 +20,11 @@ public class UserClient {
 
     @ManyToOne
     @JoinColumn(name = "user_uuid", nullable = false)
-    private User user;
+    private Users user;
 
     @ManyToOne
     @JoinColumn(name = "client_uuid", nullable = false)
-    private Client client;
+    private Clients client;
 
     @Column(name = "approved_request")
     private Boolean approvedRequest;

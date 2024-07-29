@@ -2,13 +2,13 @@ package br.com.api.service;
 
 import br.com.api.config.DocumentStorageProperties;
 
-import br.com.api.dto.DocumentRequest;
-import br.com.api.dto.DocumentResponse;
-import br.com.api.dto.UserResponse;
+import br.com.api.domain.dto.DocumentRequest;
+import br.com.api.domain.dto.DocumentResponse;
+import br.com.api.domain.dto.UserResponse;
 
-import br.com.api.entities.Client;
-import br.com.api.entities.Document;
-import br.com.api.entities.User;
+import br.com.api.domain.entities.Clients;
+import br.com.api.domain.entities.Documents;
+import br.com.api.domain.entities.Users;
 
 import br.com.api.exception.BadRequestException;
 
@@ -19,8 +19,6 @@ import br.com.api.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
 
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 import org.apache.commons.io.FilenameUtils;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -82,7 +80,7 @@ public class DocumentService {
         this.jwtService = jwtService;
     }
 
-    public List<Document> listAllDocumentsFromUsername(String username) {
+    public List<Documents> listAllDocumentsFromUsername(String username) {
 
         UserResponse response = userService.findUserByUsername(username);
         return clientRepository.findByUuid(response.clientId()).getDocumentList();
@@ -93,11 +91,11 @@ public class DocumentService {
                                            String username)
             throws IOException {
 
-        User user = userRepository.findByUsername(username);
+        Users user = userRepository.findByUsername(username);
 
         jwtService.checkIfUserWasDeleted(user);
 
-        Client client = userClientRepository.findByUser(user).getClient();
+        Clients client = userClientRepository.findByUser(user).getClient();
 
         String originalDocumentName = getOriginalDocumentName(multipartFile);
         String baseName = FilenameUtils.getBaseName(originalDocumentName);
@@ -111,7 +109,7 @@ public class DocumentService {
 
             multipartFile.transferTo(takeTheDestinationPath(baseName, extension));
 
-            Document documentToSave = Document.builder()
+            Documents documentToSave = Documents.builder()
                     .name(baseName)
                     .guideName(documentRenamed)
                     .extension(extension)
@@ -150,7 +148,7 @@ public class DocumentService {
 
     public Boolean documentNameAlreadyExists(String guideName) {
 
-        List<Document> documentListWithThisName = documentRepository.findByGuideName(guideName);
+        List<Documents> documentListWithThisName = documentRepository.findByGuideName(guideName);
         return !documentListWithThisName.isEmpty();
     }
 
@@ -158,26 +156,26 @@ public class DocumentService {
     public DocumentResponse updateDocument(MultipartFile multipartFile, DocumentRequest request, String username)
             throws IOException {
 
-        User user = userRepository.findByUsername(username);
+        Users user = userRepository.findByUsername(username);
 
         jwtService.checkIfUserWasDeleted(user);
 
-        Client client = userClientRepository.findByUser(user).getClient();
+        Clients client = userClientRepository.findByUser(user).getClient();
 
         String originalDocumentName = getOriginalDocumentName(multipartFile);
         String baseName = FilenameUtils.getBaseName(originalDocumentName);
         String guideName = renameDocumentNameToAddUser(baseName, username);
 
-        List<Document> listDocumentsByName = listDocumentsByName(guideName, username);
+        List<Documents> listDocumentsByName = listDocumentsByName(guideName, username);
 
         if (listDocumentsByName.isEmpty()) {
 
             throw new BadRequestException(exceptionReturnForEmptyList(baseName, username));
         }
 
-        Document documentToUpdate = renameGuideNameToHaveVersion(listDocumentsByName.get(0));
+        Documents documentToUpdate = renameGuideNameToHaveVersion(listDocumentsByName.get(0));
 
-        Document documentToSave = Document.builder()
+        Documents documentToSave = Documents.builder()
                 .name(baseName)
                 .guideName(guideName)
                 .extension(documentToUpdate.getExtension())
@@ -206,7 +204,7 @@ public class DocumentService {
         return returnOfDocuments(documentToSave);
     }
 
-    public Document renameGuideNameToHaveVersion(Document documentToUpdate) {
+    public Documents renameGuideNameToHaveVersion(Documents documentToUpdate) {
 
         documentToUpdate.setGuideName(documentToUpdate.getGuideName() + "_V" + documentToUpdate.getVersion());
         documentToUpdate.setUpdated(LocalDate.now());
@@ -214,13 +212,13 @@ public class DocumentService {
         return documentRepository.save(documentToUpdate);
     }
 
-    public void linkDocumentToUserAndClient(Document documentToSave, User user, Client client) {
+    public void linkDocumentToUserAndClient(Documents documentToSave, Users user, Clients client) {
 
-        List<Document> documentListUser = user.getListDocumentsCreation();
+        List<Documents> documentListUser = user.getListDocumentsCreation();
         documentListUser.add(documentToSave);
         user.setListDocumentsCreation(documentListUser);
 
-        List<Document> documentListClient = client.getDocumentList();
+        List<Documents> documentListClient = client.getDocumentList();
         documentListClient.add(documentToSave);
         client.setDocumentList(documentListClient);
 
@@ -228,7 +226,7 @@ public class DocumentService {
         clientRepository.save(client);
     }
 
-    public DocumentResponse returnOfDocuments(Document documentToSave) {
+    public DocumentResponse returnOfDocuments(Documents documentToSave) {
 
         return DocumentResponse.builder()
                 .name(documentToSave.getName())
@@ -252,12 +250,12 @@ public class DocumentService {
     @Transactional
     public void usePreviousVersion(String documentName, String username) {
 
-        User user = userRepository.findByUsername(username);
+        Users user = userRepository.findByUsername(username);
 
         jwtService.checkIfUserWasDeleted(user);
 
         String guideName = renameDocumentNameToAddUser(documentName, username);
-        List<Document> documentListFromUserByName = listDocumentsByName(guideName, username);
+        List<Documents> documentListFromUserByName = listDocumentsByName(guideName, username);
 
         if (documentListFromUserByName.isEmpty()) {
 
@@ -269,8 +267,8 @@ public class DocumentService {
             throw new BadRequestException("This is the first version of the document");
         }
 
-        Document documentToExcludeLogically = documentListFromUserByName.get(0);
-        Document previousVersionDocument = documentToExcludeLogically.getOriginalDocument();
+        Documents documentToExcludeLogically = documentListFromUserByName.get(0);
+        Documents previousVersionDocument = documentToExcludeLogically.getOriginalDocument();
 
         String originalDocumentName = documentToExcludeLogically.getGuideName() + "." +
                 documentToExcludeLogically.getExtension();
@@ -297,7 +295,7 @@ public class DocumentService {
     @Transactional
     public void deleteAllDocumentWithName(String documentName, String username) {
 
-        User user = userRepository.findByUsername(username);
+        Users user = userRepository.findByUsername(username);
 
         if(Boolean.TRUE.equals(user.getExcluded())) {
 
@@ -305,14 +303,14 @@ public class DocumentService {
         }
 
         String guideName = renameDocumentNameToAddUser(documentName, username);
-        List<Document> documentListByName = listDocumentsByName(guideName, username);
+        List<Documents> documentListByName = listDocumentsByName(guideName, username);
 
         if (documentListByName.isEmpty()) {
 
             throw new BadRequestException(exceptionReturnForEmptyList(documentName, username));
         }
 
-        for (Document document : documentListByName) {
+        for (Documents document : documentListByName) {
 
             String originalDocumentName = document.getGuideName() + "." + document.getExtension();
             Path documentPath = documentStorageLocation.resolve(originalDocumentName)
@@ -340,7 +338,7 @@ public class DocumentService {
                 username + ".";
     }
 
-    public Document deleteDocumentLogically(Document documentToExcludeLogically) {
+    public Documents deleteDocumentLogically(Documents documentToExcludeLogically) {
 
         documentToExcludeLogically.setExclusion(LocalDate.now());
         documentToExcludeLogically.setGuideName("EXCLUDED_DOCUMENT");
@@ -348,9 +346,9 @@ public class DocumentService {
         return documentRepository.save(documentToExcludeLogically);
     }
 
-    public void linkDeletedDocumentToUser(User user, Document documentToExcludeLogically) {
+    public void linkDeletedDocumentToUser(Users user, Documents documentToExcludeLogically) {
 
-        List<Document> documentListFromUserToExclude = user.getListDocumentsExclusion();
+        List<Documents> documentListFromUserToExclude = user.getListDocumentsExclusion();
         documentListFromUserToExclude.add(documentToExcludeLogically);
         user.setListDocumentsExclusion(documentListFromUserToExclude);
 
@@ -362,16 +360,16 @@ public class DocumentService {
         return documentName + "-" + username;
     }
 
-    public List<Document> listDocumentsByName(String guideName, String username) {
+    public List<Documents> listDocumentsByName(String guideName, String username) {
 
         UserResponse userResponse = userService.findUserByUsername(username);
-        User user = userRepository.findByUsername(userResponse.username());
+        Users user = userRepository.findByUsername(userResponse.username());
 
         jwtService.checkIfUserWasDeleted(user);
 
-        Client client = userClientRepository.findByUser(user).getClient();
-        List<Document> documentListClient = client.getDocumentList();
-        List<Document> documentListToReturn = getDocumentWithGuideNameInformed(documentListClient,
+        Clients client = userClientRepository.findByUser(user).getClient();
+        List<Documents> documentListClient = client.getDocumentList();
+        List<Documents> documentListToReturn = getDocumentWithGuideNameInformed(documentListClient,
                 guideName);
 
         documentListToReturn.addAll(listDocumentsWithVersionInName(documentListClient, guideName));
@@ -379,12 +377,12 @@ public class DocumentService {
         return documentListToReturn;
     }
 
-    public List<Document> getDocumentWithGuideNameInformed(List<Document> documentListClient,
-                                                           String guideName) {
+    public List<Documents> getDocumentWithGuideNameInformed(List<Documents> documentListClient,
+                                                            String guideName) {
 
-        List<Document> documentListToReturn = new ArrayList<>();
+        List<Documents> documentListToReturn = new ArrayList<>();
 
-        for (Document document : documentListClient) {
+        for (Documents document : documentListClient) {
 
             if (document.getGuideName().equals(guideName)) {
 
@@ -395,12 +393,12 @@ public class DocumentService {
         return documentListToReturn;
     }
 
-    public List<Document> listDocumentsWithVersionInName(List<Document> documentListClient,
-                                                         String guideName) {
+    public List<Documents> listDocumentsWithVersionInName(List<Documents> documentListClient,
+                                                          String guideName) {
 
-        List<Document> documentListToReturn = new ArrayList<>();
+        List<Documents> documentListToReturn = new ArrayList<>();
 
-        for (Document document : documentListClient) {
+        for (Documents document : documentListClient) {
 
             if (document.getGuideName().contains(guideName + "_V")) {
 

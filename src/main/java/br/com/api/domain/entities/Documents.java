@@ -1,4 +1,4 @@
-package br.com.api.entities;
+package br.com.api.domain.entities;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
@@ -15,7 +15,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Table(name = "TB_DOCUMENT")
 @Builder
-public class Document {
+public class Documents {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -52,5 +52,5 @@ public class Document {
     @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "original_document_uuid")
     @JsonIgnore
-    private Document originalDocument;
+    private Documents originalDocument;
 }

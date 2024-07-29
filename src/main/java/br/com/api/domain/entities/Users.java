@@ -1,5 +1,6 @@
-package br.com.api.entities;
+package br.com.api.domain.entities;
 
+import br.com.api.domain.dto.UserRequest;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -7,10 +8,7 @@ import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Entity
 @Getter
@@ -18,8 +16,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "TB_USER")
-@Builder
-public class User implements UserDetails {
+public class Users implements UserDetails {
 
     /*
     *
@@ -50,15 +47,15 @@ public class User implements UserDetails {
             name = "USERS_ROLES",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id"))
-    private List<Role> roleList = new ArrayList<>();
+    private List<Roles> roleList = new ArrayList<>();
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_uuid_creation")
-    private List<Document> listDocumentsCreation;
+    private List<Documents> listDocumentsCreation;
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_uuid_exclusion")
-    private List<Document> listDocumentsExclusion;
+    private List<Documents> listDocumentsExclusion;
 
     @ManyToMany
     @JoinTable(
@@ -66,7 +63,17 @@ public class User implements UserDetails {
             joinColumns = @JoinColumn(name = "user_uuid"),
             inverseJoinColumns = @JoinColumn(name = "client_uuid"))
     @JsonIgnore
-    private List<Client> clients;
+    private List<Clients> clients;
+
+    public Users(UserRequest userRequest, String password, List<Roles> roleList) {
+
+        this.username = userRequest.username();
+        this.email = userRequest.email();
+        this.password = password;
+        this.excluded = false;
+        this.roleList = roleList;
+        this.clients = new ArrayList<>();
+    }
 
     @Override
     public String getPassword() {

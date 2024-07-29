@@ -1,4 +1,4 @@
-package br.com.api.entities.enums;
+package br.com.api.domain.enums;
 
 public enum RoleName {
 
