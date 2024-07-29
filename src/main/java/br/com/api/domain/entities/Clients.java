@@ -1,9 +1,11 @@
-package br.com.api.entities;
+package br.com.api.domain.entities;
 
+import br.com.api.domain.dto.UserRequest;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -13,8 +15,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "TB_CLIENT")
-@Builder
-public class Client {
+public class Clients {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -31,9 +32,17 @@ public class Client {
     private String cnae;
 
     @ManyToMany(mappedBy = "clients")
-    private List<User> users;
+    private List<Users> users;
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "client_uuid")
-    private List<Document> documentList;
+    private List<Documents> documentList;
+
+    public Clients(UserRequest userRequest) {
+
+        this.nameCorporateReason = userRequest.nameCorporateReason();
+        this.cnpjCpf = userRequest.cnpjCpf();
+        this.cnae = userRequest.cnae();
+        this.users = new ArrayList<>();
+    }
 }

@@ -1,4 +1,4 @@
-package br.com.api.dto;
+package br.com.api.domain.dto;
 
 public record JwtResponse(
 

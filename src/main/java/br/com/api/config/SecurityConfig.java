@@ -51,8 +51,8 @@ public class SecurityConfig {
 
         httpSecurity.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/user/**").permitAll()
-                        .requestMatchers("/user", "/user/token", "/user/allowUserLink**").authenticated()
+                        .requestMatchers("/user/**", "/user/token").permitAll()
+                        .requestMatchers("/user", "/user/allowUserLink**").authenticated()
                         .anyRequest().authenticated())
                 .exceptionHandling(exceptionHandling ->
                         exceptionHandling

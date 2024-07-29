@@ -1,6 +1,6 @@
-package br.com.api.entities;
+package br.com.api.domain.entities;
 
-import br.com.api.entities.enums.RoleName;
+import br.com.api.domain.enums.RoleName;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -11,7 +11,7 @@ import lombok.*;
 @NoArgsConstructor
 @Table(name = "TB_ROLES")
 @Builder
-public class Role {
+public class Roles {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

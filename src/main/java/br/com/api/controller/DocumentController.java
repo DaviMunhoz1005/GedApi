@@ -1,11 +1,11 @@
 package br.com.api.controller;
 
-import br.com.api.dto.DocumentResponse;
-import br.com.api.dto.DocumentRequest;
+import br.com.api.domain.dto.DocumentResponse;
+import br.com.api.domain.dto.DocumentRequest;
 
-import br.com.api.entities.Client;
-import br.com.api.entities.Document;
-import br.com.api.entities.User;
+import br.com.api.domain.entities.Clients;
+import br.com.api.domain.entities.Documents;
+import br.com.api.domain.entities.Users;
 
 import br.com.api.exception.BadRequestException;
 
@@ -49,12 +49,12 @@ public class DocumentController {
     private final UserRepository userRepository;
 
     @GetMapping(path = "find")
-    public ResponseEntity<List<Document>> listDocuments() {
+    public ResponseEntity<List<Documents>> listDocuments() {
 
         jwtService.checkIfTokenIsValid();
 
         String username = jwtService.getSubjectFromAuthentication();
-        User user = userRepository.findByUsername(username);
+        Users user = userRepository.findByUsername(username);
 
         jwtService.checkIfUserWasDeleted(user);
 
@@ -70,12 +70,12 @@ public class DocumentController {
     }
 
     @GetMapping(path = "findName")
-    public ResponseEntity<List<Document>> listDocumentsByName(@Valid @RequestParam String documentName) {
+    public ResponseEntity<List<Documents>> listDocumentsByName(@Valid @RequestParam String documentName) {
 
         jwtService.checkIfTokenIsValid();
 
         String username = jwtService.getSubjectFromAuthentication();
-        User user = userRepository.findByUsername(username);
+        Users user = userRepository.findByUsername(username);
 
         jwtService.checkIfUserWasDeleted(user);
 
@@ -96,16 +96,16 @@ public class DocumentController {
 
         String customerOriginalUsername = "";
 
-        User user = userRepository.findByUsername(username);
+        Users user = userRepository.findByUsername(username);
 
         if(Boolean.TRUE.equals(user.getExcluded())) {
 
             throw new BadRequestException("This user has been deleted");
         }
 
-        Client client = userClientRepository.findByUser(user).getClient();
+        Clients client = userClientRepository.findByUser(user).getClient();
 
-        for(User finalUser : client.getUsers()) {
+        for(Users finalUser : client.getUsers()) {
 
             if(userClientRepository.findByUser(finalUser).getApprovedRequest() == null) {
 
@@ -171,7 +171,7 @@ public class DocumentController {
         jwtService.checkIfTokenIsValid();
 
         String username = jwtService.getSubjectFromAuthentication();
-        User user = userRepository.findByUsername(username);
+        Users user = userRepository.findByUsername(username);
 
         jwtService.checkIfUserWasDeleted(user);
 

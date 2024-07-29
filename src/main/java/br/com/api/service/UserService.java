@@ -1,13 +1,10 @@
 package br.com.api.service;
 
-import br.com.api.dto.EmployeeResponse;
-import br.com.api.dto.UserRequest;
-import br.com.api.dto.JwtResponse;
-import br.com.api.dto.UserResponse;
+import br.com.api.domain.dto.*;
 
-import br.com.api.entities.Client;
-import br.com.api.entities.User;
-import br.com.api.entities.UserClient;
+import br.com.api.domain.entities.Clients;
+import br.com.api.domain.entities.Users;
+import br.com.api.domain.entities.UserClient;
 
 import br.com.api.exception.BadRequestException;
 
@@ -15,7 +12,6 @@ import br.com.api.repository.*;
 
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import org.springframework.stereotype.Service;
@@ -39,7 +35,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserClientRepository userClientRepository;
 
-    public JwtResponse authenticate(Authentication authentication) {
+    public JwtResponse authenticate(JwtRequest jwtRequest) {
 
         Instant instant = Instant.now().plusSeconds(3600);
 
@@ -48,12 +44,15 @@ public class UserService {
 
         String formattedTime = expiresIn.format(formatter);
 
-        return new JwtResponse(jwtService.generateToken(authentication), formattedTime);
+        Users user = userRepository.findByUsername(jwtRequest.username());
+
+        return new JwtResponse(jwtService.generateToken(jwtRequest.username(), user.getRoleList().get(0).getRoleName()),
+                formattedTime);
     }
 
     public UserResponse createUser(UserRequest userRequest) {
 
-        Client existingClient = clientRepository.findByCnpjCpf(userRequest.cnpjCpf());
+        Clients existingClient = clientRepository.findByCnpjCpf(userRequest.cnpjCpf());
 
         if(existingClient == null) {
 
@@ -70,24 +69,13 @@ public class UserService {
 
     public UserResponse createNewClient(UserRequest userRequest) {
 
-        User userToSave = User.builder()
-                .username(userRequest.username())
-                .email(userRequest.email())
-                .password(passwordEncoder.encode(userRequest.password()))
-                .excluded(false)
-                .roleList(roleRepository.findById(1L).stream().toList())
-                .clients(new ArrayList<>())
-                .build();
+        Users userToSave = new Users(userRequest, passwordEncoder.encode(userRequest.password()),
+                roleRepository.findById(1L).stream().toList());
 
-        Client clientToSave = Client.builder()
-                .nameCorporateReason(userRequest.nameCorporateReason())
-                .cnpjCpf(userRequest.cnpjCpf())
-                .cnae(userRequest.cnae())
-                .users(new ArrayList<>())
-                .build();
+        Clients clientToSave = new Clients(userRequest);
 
-        User userSaved = userRepository.save(userToSave);
-        Client clientSaved = clientRepository.save(clientToSave);
+        Users userSaved = userRepository.save(userToSave);
+        Clients clientSaved = clientRepository.save(clientToSave);
 
         UserClient userClient = UserClient.builder()
                 .user(userSaved)
@@ -113,11 +101,11 @@ public class UserService {
                 .build();
     }
 
-    public UserResponse createNewEmployee(Client existingClient, UserRequest userRequest) {
+    public UserResponse createNewEmployee(Clients existingClient, UserRequest userRequest) {
 
-        User user = null;
+        Users user = null;
 
-        for(User finalUser : existingClient.getUsers()) {
+        for(Users finalUser : existingClient.getUsers()) {
 
             if(userClientRepository.findByUser(finalUser).getApprovedRequest() == null) {
 
@@ -131,16 +119,10 @@ public class UserService {
             throw new BadRequestException("This user you are trying to link to has been deleted");
         }
 
-        User userToSave = User.builder()
-                .username(userRequest.username())
-                .email(userRequest.email())
-                .password(passwordEncoder.encode(userRequest.password()))
-                .excluded(false)
-                .roleList(roleRepository.findById(2L).stream().toList())
-                .clients(new ArrayList<>())
-                .build();
+        Users userToSave = new Users(userRequest, passwordEncoder.encode(userRequest.password()),
+                roleRepository.findById(2L).stream().toList());
 
-        User userSaved = userRepository.save(userToSave);
+        Users userSaved = userRepository.save(userToSave);
 
         UserClient userClient = UserClient.builder()
                 .user(userSaved)
@@ -166,12 +148,12 @@ public class UserService {
                 .build();
     }
 
-    public List<EmployeeResponse> listOfUsersWhoWantToLink(Client client) {
+    public List<EmployeeResponse> listOfUsersWhoWantToLink(Clients client) {
 
         List<EmployeeResponse> listOfUsersWhoWantToLink = new ArrayList<>();
         EmployeeResponse employeeResponse;
 
-        for(User user : client.getUsers()) {
+        for(Users user : client.getUsers()) {
 
             if(Boolean.FALSE.equals(userClientRepository.findByUser(user).getApprovedRequest())) {
 
@@ -189,9 +171,9 @@ public class UserService {
         return listOfUsersWhoWantToLink;
     }
 
-    public EmployeeResponse allowUserLinking(Client client, String username) {
+    public EmployeeResponse allowUserLinking(Clients client, String username) {
 
-        User userToSetApprovedRequest = null;
+        Users userToSetApprovedRequest = null;
 
         for(EmployeeResponse response : listOfUsersWhoWantToLink(client)) {
 
@@ -218,10 +200,9 @@ public class UserService {
         }
     }
 
-    public UserResponse deleteAccount(User user) {
+    public UserResponse deleteAccount(Users user) {
 
         user.setExcluded(true);
-        user.setEmail("EXCLUDED");
         userRepository.save(user);
 
         return UserResponse.builder()
@@ -239,8 +220,8 @@ public class UserService {
 
     public UserResponse findUserByUsername(String username) {
 
-        User user = userRepository.findByUsername(username);
-        Client client = userClientRepository.findByUser(user).getClient();
+        Users user = userRepository.findByUsername(username);
+        Clients client = userClientRepository.findByUser(user).getClient();
 
         return UserResponse.builder()
                 .userId(user.getUuid())
