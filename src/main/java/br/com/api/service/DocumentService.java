@@ -83,7 +83,9 @@ public class DocumentService {
     public List<Documents> listAllDocumentsFromUsername(String username) {
 
         UserResponse response = userService.findUserByUsername(username);
-        return clientRepository.findByUuid(response.clientId()).getDocumentList();
+        List<Documents> documentList = clientRepository.findByUuid(response.clientId()).getDocumentList();
+        documentList.removeIf(document -> document.getGuideName().equals("EXCLUDED_DOCUMENT"));
+        return documentList;
     }
 
     @Transactional
