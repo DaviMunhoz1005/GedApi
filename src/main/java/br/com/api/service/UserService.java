@@ -46,9 +46,16 @@ public class UserService {
         String formattedTime = zonedDateTime.format(formatter);
 
         Users user = userRepository.findByUsername(jwtRequest.username());
+        String password = jwtRequest.password();
 
-        return new JwtResponse(jwtService.generateToken(jwtRequest.username(), user.getRoleList().get(0).getRoleName()),
-                formattedTime);
+        if(passwordEncoder.matches(password, user.getPassword())) {
+
+            return new JwtResponse(jwtService.generateToken(jwtRequest.username(), user.getRoleList().get(0).getRoleName()),
+                    formattedTime);
+        } else {
+
+            return null;
+        }
     }
 
     public UserResponse createUser(UserRequest userRequest) {
