@@ -22,7 +22,6 @@ public class Users implements UserDetails {
     *
     * TODO - Estudar e implementar refresh Token;
     *        Pensar na lógica de ter uma Tabela separada para as versões dos documentos;
-    *        Corrigir para que quando listar os documentos apenas listar os não excluídos
     *
     * */
 

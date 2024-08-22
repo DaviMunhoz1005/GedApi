@@ -97,8 +97,26 @@ public class UserController {
     }
 
     @GetMapping(path = "find")
-    public UserResponse findUserByUsername(@RequestParam String username) {
+    public ResponseEntity<UserResponse> findUserByUsername(@RequestParam String username) {
 
-        return userService.findUserByUsername(username);
+        return new ResponseEntity<>(userService.findUserByUsername(username), HttpStatus.OK);
+    }
+
+    @GetMapping(path = "cnpjCpf")
+    public ResponseEntity<List<String>> listAllCnpjCpf() {
+
+        return new ResponseEntity<>(userService.listCnpjCpf(), HttpStatus.OK);
+    }
+
+    @GetMapping(path = "cnae")
+    public ResponseEntity<List<String>> listAllCnae() {
+
+        return new ResponseEntity<>(userService.listCnae(), HttpStatus.OK);
+    }
+
+    @GetMapping(path = "nameCorporateReason")
+    public ResponseEntity<List<String>> listAllNameCorporateReason() {
+
+        return new ResponseEntity<>(userService.listNameCorporateReason(), HttpStatus.OK);
     }
 }

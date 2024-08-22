@@ -82,7 +82,7 @@ Necessário uma autenticação básica com username e senha.
 ```json
 {
     "accessToken": "eyJhbGciOiJSUzI1NiJ9",
-    "expiresIn": "18:52:34"
+    "expiresIn": "10/05/2007 18:52:34"
 }
 ```
 

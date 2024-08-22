@@ -19,10 +19,12 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -38,11 +40,10 @@ public class UserService {
     public JwtResponse authenticate(JwtRequest jwtRequest) {
 
         Instant instant = Instant.now().plusSeconds(3600);
+        ZonedDateTime zonedDateTime = instant.atZone(ZoneId.systemDefault());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 
-        LocalTime expiresIn = instant.atZone(ZoneId.systemDefault()).toLocalTime();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
-
-        String formattedTime = expiresIn.format(formatter);
+        String formattedTime = zonedDateTime.format(formatter);
 
         Users user = userRepository.findByUsername(jwtRequest.username());
 
@@ -234,5 +235,29 @@ public class UserService {
                 .excluded(user.getExcluded())
                 .role(user.getRoleList().get(0))
                 .build();
+    }
+
+    public List<String> listCnpjCpf() {
+
+        return clientRepository.findAll().stream()
+                .map(Clients::getCnpjCpf)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    public List<String> listCnae() {
+
+        return clientRepository.findAll().stream()
+                .map(Clients::getCnae)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    public List<String> listNameCorporateReason() {
+
+        return clientRepository.findAll().stream()
+                .map(Clients::getNameCorporateReason)
+                .filter(Objects::nonNull)
+                .toList();
     }
 }
