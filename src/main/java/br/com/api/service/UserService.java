@@ -237,27 +237,18 @@ public class UserService {
                 .build();
     }
 
-    public List<String> listCnpjCpf() {
+    public Clients findClientByCnpjCpf(String cnpjCpf) {
 
-        return clientRepository.findAll().stream()
-                .map(Clients::getCnpjCpf)
-                .filter(Objects::nonNull)
-                .toList();
+        return clientRepository.findByCnpjCpf(cnpjCpf);
     }
 
-    public List<String> listCnae() {
+    public Clients findClientByCnae(String cnae) {
 
-        return clientRepository.findAll().stream()
-                .map(Clients::getCnae)
-                .filter(Objects::nonNull)
-                .toList();
+        return clientRepository.findByCnae(cnae);
     }
 
-    public List<String> listNameCorporateReason() {
+    public Clients findClientByNameCorporateReason(String nameCorporateReason) {
 
-        return clientRepository.findAll().stream()
-                .map(Clients::getNameCorporateReason)
-                .filter(Objects::nonNull)
-                .toList();
+        return clientRepository.findByNameCorporateReason(nameCorporateReason);
     }
 }

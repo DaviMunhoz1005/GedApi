@@ -96,27 +96,28 @@ public class UserController {
         return new ResponseEntity<>(userService.deleteAccount(user), HttpStatus.OK);
     }
 
-    @GetMapping(path = "find")
+    @GetMapping(path = "findUser")
     public ResponseEntity<UserResponse> findUserByUsername(@RequestParam String username) {
 
         return new ResponseEntity<>(userService.findUserByUsername(username), HttpStatus.OK);
     }
 
-    @GetMapping(path = "cnpjCpf")
-    public ResponseEntity<List<String>> listAllCnpjCpf() {
+    @GetMapping(path = "findCnpjCpf")
+    public ResponseEntity<Clients> findClientByCnpjCpf(@RequestParam String cnpjCpf) {
 
-        return new ResponseEntity<>(userService.listCnpjCpf(), HttpStatus.OK);
+        return new ResponseEntity<>(userService.findClientByCnpjCpf(cnpjCpf), HttpStatus.OK);
     }
 
-    @GetMapping(path = "cnae")
-    public ResponseEntity<List<String>> listAllCnae() {
+    @GetMapping(path = "findCnae")
+    public ResponseEntity<Clients> findClientByCnae(@RequestParam String cnae) {
 
-        return new ResponseEntity<>(userService.listCnae(), HttpStatus.OK);
+        return new ResponseEntity<>(userService.findClientByCnae(cnae), HttpStatus.OK);
     }
 
-    @GetMapping(path = "nameCorporateReason")
-    public ResponseEntity<List<String>> listAllNameCorporateReason() {
+    @GetMapping(path = "findNameCorporateReason")
+    public ResponseEntity<Clients> findClientByNameCorporateReason(@RequestParam String nameCorporateReason) {
 
-        return new ResponseEntity<>(userService.listNameCorporateReason(), HttpStatus.OK);
+        return new ResponseEntity<>(userService.findClientByNameCorporateReason(nameCorporateReason),
+                HttpStatus.OK);
     }
 }
