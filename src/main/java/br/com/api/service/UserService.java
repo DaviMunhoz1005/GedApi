@@ -222,19 +222,24 @@ public class UserService {
     public UserResponse findUserByUsername(String username) {
 
         Users user = userRepository.findByUsername(username);
-        Clients client = userClientRepository.findByUser(user).getClient();
 
-        return UserResponse.builder()
-                .userId(user.getUuid())
-                .clientId(client.getUuid())
-                .username(username)
-                .nameCorporateReason(client.getNameCorporateReason())
-                .email(user.getEmail())
-                .cnpjCpf(client.getCnpjCpf())
-                .cnae(client.getCnae())
-                .excluded(user.getExcluded())
-                .role(user.getRoleList().get(0))
-                .build();
+        if(user != null) {
+
+            Clients client = userClientRepository.findByUser(user).getClient();
+
+            return UserResponse.builder()
+                    .userId(user.getUuid())
+                    .clientId(client.getUuid())
+                    .username(username)
+                    .nameCorporateReason(client.getNameCorporateReason())
+                    .email(user.getEmail())
+                    .cnpjCpf(client.getCnpjCpf())
+                    .cnae(client.getCnae())
+                    .excluded(user.getExcluded())
+                    .role(user.getRoleList().get(0))
+                    .build();
+        }
+        return null;
     }
 
     public Clients findClientByCnpjCpf(String cnpjCpf) {
