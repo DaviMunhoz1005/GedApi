@@ -11,4 +11,6 @@ public interface ClientRepository extends JpaRepository<Clients, UUID> {
 
     Clients findByUuid(UUID uuid);
     Clients findByCnpjCpf(String cnpjCpf);
+    Clients findByCnae(String cnae);
+    Clients findByNameCorporateReason(String nameCorporateReason);
 }

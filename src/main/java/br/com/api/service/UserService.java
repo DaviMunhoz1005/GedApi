@@ -222,42 +222,38 @@ public class UserService {
     public UserResponse findUserByUsername(String username) {
 
         Users user = userRepository.findByUsername(username);
-        Clients client = userClientRepository.findByUser(user).getClient();
 
-        return UserResponse.builder()
-                .userId(user.getUuid())
-                .clientId(client.getUuid())
-                .username(username)
-                .nameCorporateReason(client.getNameCorporateReason())
-                .email(user.getEmail())
-                .cnpjCpf(client.getCnpjCpf())
-                .cnae(client.getCnae())
-                .excluded(user.getExcluded())
-                .role(user.getRoleList().get(0))
-                .build();
+        if(user != null) {
+
+            Clients client = userClientRepository.findByUser(user).getClient();
+
+            return UserResponse.builder()
+                    .userId(user.getUuid())
+                    .clientId(client.getUuid())
+                    .username(username)
+                    .nameCorporateReason(client.getNameCorporateReason())
+                    .email(user.getEmail())
+                    .cnpjCpf(client.getCnpjCpf())
+                    .cnae(client.getCnae())
+                    .excluded(user.getExcluded())
+                    .role(user.getRoleList().get(0))
+                    .build();
+        }
+        return null;
     }
 
-    public List<String> listCnpjCpf() {
+    public Clients findClientByCnpjCpf(String cnpjCpf) {
 
-        return clientRepository.findAll().stream()
-                .map(Clients::getCnpjCpf)
-                .filter(Objects::nonNull)
-                .toList();
+        return clientRepository.findByCnpjCpf(cnpjCpf);
     }
 
-    public List<String> listCnae() {
+    public Clients findClientByCnae(String cnae) {
 
-        return clientRepository.findAll().stream()
-                .map(Clients::getCnae)
-                .filter(Objects::nonNull)
-                .toList();
+        return clientRepository.findByCnae(cnae);
     }
 
-    public List<String> listNameCorporateReason() {
+    public Clients findClientByNameCorporateReason(String nameCorporateReason) {
 
-        return clientRepository.findAll().stream()
-                .map(Clients::getNameCorporateReason)
-                .filter(Objects::nonNull)
-                .toList();
+        return clientRepository.findByNameCorporateReason(nameCorporateReason);
     }
 }
