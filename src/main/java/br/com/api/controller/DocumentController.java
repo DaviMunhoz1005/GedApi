@@ -175,9 +175,11 @@ public class DocumentController {
 
         jwtService.checkIfUserWasDeleted(user);
 
+        Users userOwner = userClientRepository.findByUser(user).getClient().getUsers().get(0);
+
         try {
 
-            Resource resource = generateGuideNameByFileNameAndUsername(documentName, username);
+            Resource resource = generateGuideNameByFileNameAndUsername(documentName, userOwner.getUsername());
 
             String contentType = httpServletRequest.getServletContext()
                     .getMimeType(resource.getFile().getAbsolutePath());
