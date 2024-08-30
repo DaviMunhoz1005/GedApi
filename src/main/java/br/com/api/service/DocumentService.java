@@ -103,6 +103,11 @@ public class DocumentService {
         String baseName = FilenameUtils.getBaseName(originalDocumentName);
         String extension = FilenameUtils.getExtension(originalDocumentName);
 
+        if(baseName.contains(".")) {
+
+            throw new BadRequestException("Document names with \".\" are not permitted. beyond the extension.");
+        }
+
         String documentRenamed = renameDocumentNameToAddUser(baseName, username);
 
         boolean nameAlreadyExisting = documentNameAlreadyExists(documentRenamed);
