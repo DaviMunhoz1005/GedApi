@@ -85,6 +85,7 @@ public class DocumentService {
         UserResponse response = userService.findUserByUsername(username);
         List<Documents> documentList = clientRepository.findByUuid(response.clientId()).getDocumentList();
         documentList.removeIf(document -> document.getGuideName().equals("EXCLUDED_DOCUMENT"));
+        documentList.removeIf(documents -> documents.getGuideName().contains("_V"));
         return documentList;
     }
 
