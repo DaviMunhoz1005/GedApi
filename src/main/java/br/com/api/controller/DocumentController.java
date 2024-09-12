@@ -214,6 +214,7 @@ public class DocumentController {
 
         try {
 
+            assert userOwner != null;
             Resource resource = generateGuideNameByFileNameAndUsername(documentName, userOwner.getUsername());
 
             String contentType = httpServletRequest.getServletContext()
