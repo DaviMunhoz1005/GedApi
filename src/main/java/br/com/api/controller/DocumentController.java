@@ -8,6 +8,7 @@ import br.com.api.domain.entities.Clients;
 import br.com.api.domain.entities.Documents;
 import br.com.api.domain.entities.Users;
 
+import br.com.api.domain.enums.RoleName;
 import br.com.api.exception.BadRequestException;
 
 import br.com.api.repository.UserClientRepository;
@@ -200,7 +201,16 @@ public class DocumentController {
 
         jwtService.checkIfUserWasDeleted(user);
 
-        Users userOwner = userClientRepository.findByUser(user).getClient().getUsers().get(0);
+        Users userOwner = null;
+        for(Users userEmp : userClientRepository.findByUser(user).getClient().getUsers()) {
+
+            boolean isClient = userEmp.getRoleList().get(0).getRoleName() == RoleName.CLIENT;
+
+            if(isClient) {
+
+                userOwner = userEmp;
+            }
+        }
 
         try {
 
@@ -209,7 +219,7 @@ public class DocumentController {
             String contentType = httpServletRequest.getServletContext()
                     .getMimeType(resource.getFile().getAbsolutePath());
 
-            if (contentType == null) {
+            if(contentType == null) {
 
                 contentType = "application/octet-stream";
             }
