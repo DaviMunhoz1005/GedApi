@@ -2,6 +2,7 @@ package br.com.api.service;
 
 import br.com.api.config.DocumentStorageProperties;
 
+import br.com.api.domain.dto.DocumentInfosUpdateResponse;
 import br.com.api.domain.dto.DocumentRequest;
 import br.com.api.domain.dto.DocumentResponse;
 import br.com.api.domain.dto.UserResponse;
@@ -85,6 +86,7 @@ public class DocumentService {
         UserResponse response = userService.findUserByUsername(username);
         List<Documents> documentList = clientRepository.findByUuid(response.clientId()).getDocumentList();
         documentList.removeIf(document -> document.getGuideName().equals("EXCLUDED_DOCUMENT"));
+        documentList.removeIf(documents -> documents.getGuideName().contains("_V"));
         return documentList;
     }
 
@@ -102,6 +104,11 @@ public class DocumentService {
         String originalDocumentName = getOriginalDocumentName(multipartFile);
         String baseName = FilenameUtils.getBaseName(originalDocumentName);
         String extension = FilenameUtils.getExtension(originalDocumentName);
+
+        if(baseName.contains(".")) {
+
+            throw new BadRequestException("Document names with \".\" are not permitted. beyond the extension.");
+        }
 
         String documentRenamed = renameDocumentNameToAddUser(baseName, username);
 
@@ -170,7 +177,7 @@ public class DocumentService {
 
         List<Documents> listDocumentsByName = listDocumentsByName(guideName, username);
 
-        if (listDocumentsByName.isEmpty()) {
+        if(listDocumentsByName.isEmpty()) {
 
             throw new BadRequestException(exceptionReturnForEmptyList(baseName, username));
         }
@@ -360,6 +367,34 @@ public class DocumentService {
     public String renameDocumentNameToAddUser(String documentName, String username) {
 
         return documentName + "-" + username;
+    }
+
+    public List<DocumentInfosUpdateResponse> listInfosUpdated(String documentName, String username,
+                                                              String guideName) {
+
+        List<Documents> documentsList = listDocumentsByName(guideName, username);
+        documentsList.sort(Comparator.comparing(Documents::getVersion).reversed());
+
+        if(documentsList.isEmpty()) {
+
+            throw new BadRequestException(exceptionReturnForEmptyList(documentName, username));
+        }
+
+        List<DocumentInfosUpdateResponse> responseList = new ArrayList<>();
+
+        for(Documents document : documentsList) {
+
+            DocumentInfosUpdateResponse response = DocumentInfosUpdateResponse.builder()
+                    .name(document.getName())
+                    .version(document.getVersion())
+                    .creation(document.getCreation())
+                    .updated(document.getUpdated())
+                    .build();
+
+            responseList.add(response);
+        }
+
+        return responseList;
     }
 
     public List<Documents> listDocumentsByName(String guideName, String username) {

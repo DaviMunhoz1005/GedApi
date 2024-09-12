@@ -1,5 +1,6 @@
 package br.com.api.controller;
 
+import br.com.api.domain.dto.DocumentInfosUpdateResponse;
 import br.com.api.domain.dto.DocumentResponse;
 import br.com.api.domain.dto.DocumentRequest;
 
@@ -7,6 +8,7 @@ import br.com.api.domain.entities.Clients;
 import br.com.api.domain.entities.Documents;
 import br.com.api.domain.entities.Users;
 
+import br.com.api.domain.enums.RoleName;
 import br.com.api.exception.BadRequestException;
 
 import br.com.api.repository.UserClientRepository;
@@ -85,6 +87,30 @@ public class DocumentController {
         if(Boolean.TRUE.equals(userBindingState) || userBindingState == null) {
 
             return new ResponseEntity<>(documentService.listDocumentsByName(guideName, username),
+                    HttpStatus.OK);
+        } else {
+
+            throw new BadRequestException("Your link has not yet been permitted by the legal entity");
+        }
+    }
+
+    @GetMapping(path = "infosUpdate")
+    public ResponseEntity<List<DocumentInfosUpdateResponse>> listInfosUpdate(@Valid @RequestParam
+                                                                             String documentName) {
+
+        jwtService.checkIfTokenIsValid();
+
+        String username = jwtService.getSubjectFromAuthentication();
+        Users user = userRepository.findByUsername(username);
+
+        jwtService.checkIfUserWasDeleted(user);
+
+        String guideName = documentName + "-" + getTheCustomerOriginalUsername(username);
+        Boolean userBindingState = userClientRepository.findByUser(user).getApprovedRequest();
+
+        if(Boolean.TRUE.equals(userBindingState) || userBindingState == null) {
+
+            return new ResponseEntity<>(documentService.listInfosUpdated(documentName, username, guideName),
                     HttpStatus.OK);
         } else {
 
@@ -175,16 +201,26 @@ public class DocumentController {
 
         jwtService.checkIfUserWasDeleted(user);
 
-        Users userOwner = userClientRepository.findByUser(user).getClient().getUsers().get(0);
+        Users userOwner = null;
+        for(Users userEmp : userClientRepository.findByUser(user).getClient().getUsers()) {
+
+            boolean isClient = userEmp.getRoleList().get(0).getRoleName() == RoleName.CLIENT;
+
+            if(isClient) {
+
+                userOwner = userEmp;
+            }
+        }
 
         try {
 
+            assert userOwner != null;
             Resource resource = generateGuideNameByFileNameAndUsername(documentName, userOwner.getUsername());
 
             String contentType = httpServletRequest.getServletContext()
                     .getMimeType(resource.getFile().getAbsolutePath());
 
-            if (contentType == null) {
+            if(contentType == null) {
 
                 contentType = "application/octet-stream";
             }
