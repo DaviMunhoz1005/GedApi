@@ -2,6 +2,7 @@ package br.com.api.service;
 
 import br.com.api.config.DocumentStorageProperties;
 
+import br.com.api.domain.dto.DocumentInfosUpdateResponse;
 import br.com.api.domain.dto.DocumentRequest;
 import br.com.api.domain.dto.DocumentResponse;
 import br.com.api.domain.dto.UserResponse;
@@ -176,7 +177,7 @@ public class DocumentService {
 
         List<Documents> listDocumentsByName = listDocumentsByName(guideName, username);
 
-        if (listDocumentsByName.isEmpty()) {
+        if(listDocumentsByName.isEmpty()) {
 
             throw new BadRequestException(exceptionReturnForEmptyList(baseName, username));
         }
@@ -366,6 +367,34 @@ public class DocumentService {
     public String renameDocumentNameToAddUser(String documentName, String username) {
 
         return documentName + "-" + username;
+    }
+
+    public List<DocumentInfosUpdateResponse> listInfosUpdated(String documentName, String username,
+                                                              String guideName) {
+
+        List<Documents> documentsList = listDocumentsByName(guideName, username);
+        documentsList.sort(Comparator.comparing(Documents::getVersion).reversed());
+
+        if(documentsList.isEmpty()) {
+
+            throw new BadRequestException(exceptionReturnForEmptyList(documentName, username));
+        }
+
+        List<DocumentInfosUpdateResponse> responseList = new ArrayList<>();
+
+        for(Documents document : documentsList) {
+
+            DocumentInfosUpdateResponse response = DocumentInfosUpdateResponse.builder()
+                    .name(document.getName())
+                    .version(document.getVersion())
+                    .creation(document.getCreation())
+                    .updated(document.getUpdated())
+                    .build();
+
+            responseList.add(response);
+        }
+
+        return responseList;
     }
 
     public List<Documents> listDocumentsByName(String guideName, String username) {

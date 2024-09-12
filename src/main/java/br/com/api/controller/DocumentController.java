@@ -1,5 +1,6 @@
 package br.com.api.controller;
 
+import br.com.api.domain.dto.DocumentInfosUpdateResponse;
 import br.com.api.domain.dto.DocumentResponse;
 import br.com.api.domain.dto.DocumentRequest;
 
@@ -85,6 +86,30 @@ public class DocumentController {
         if(Boolean.TRUE.equals(userBindingState) || userBindingState == null) {
 
             return new ResponseEntity<>(documentService.listDocumentsByName(guideName, username),
+                    HttpStatus.OK);
+        } else {
+
+            throw new BadRequestException("Your link has not yet been permitted by the legal entity");
+        }
+    }
+
+    @GetMapping(path = "infosUpdate")
+    public ResponseEntity<List<DocumentInfosUpdateResponse>> listInfosUpdate(@Valid @RequestParam
+                                                                             String documentName) {
+
+        jwtService.checkIfTokenIsValid();
+
+        String username = jwtService.getSubjectFromAuthentication();
+        Users user = userRepository.findByUsername(username);
+
+        jwtService.checkIfUserWasDeleted(user);
+
+        String guideName = documentName + "-" + getTheCustomerOriginalUsername(username);
+        Boolean userBindingState = userClientRepository.findByUser(user).getApprovedRequest();
+
+        if(Boolean.TRUE.equals(userBindingState) || userBindingState == null) {
+
+            return new ResponseEntity<>(documentService.listInfosUpdated(documentName, username, guideName),
                     HttpStatus.OK);
         } else {
 
