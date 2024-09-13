@@ -207,7 +207,7 @@ Necessário Token, lista todos os Documentos do Usuário, até aqueles que foram
 ]
 ```
 
-### Listar Documentos por nome do Usuário
+### Listar Documentos por Nome
 
 ```
   GET /document/findName?documentName=
@@ -318,6 +318,44 @@ Necessário Token, atualiza o documento passado por multipart/form-data e insere
     "updated": null,
     "exclusion": null
 }
+```
+
+### Listar Informações da Atualização do Documento
+
+```
+  GET /document/infosUpdate
+```
+#### Descrição
+Necessário Token, lista as informações de quando o Documento foi atualizado, quando foi criado e versões atuais junto com as anteriores.
+
+| Parâmetro   | Tipo       | Descrição                                   |
+| :---------- | :--------- | :------------------------------------------ |
+| `documentName`      | `string` | **Obrigatório**. Nome do Documento que quer listar |
+
+
+##### Exemplo de Retorno
+
+```json
+[
+      {
+        "name": "test",
+        "version": 3,
+        "creation": "2024-09-13",
+        "updated": "2024-09-13"
+      },
+      {
+        "name": "test",
+        "version": 2,
+        "creation": "2024-09-13",
+        "updated": "2024-09-13"
+      },
+      {
+        "name": "test",
+        "version": 1,
+        "creation": "2024-09-13",
+        "updated": "2024-09-13"
+      }
+]
 ```
 
 ### Usar Versão anterior do Documento
