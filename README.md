@@ -5,7 +5,7 @@
 </p>
 
 ## Resumo do projeto
-Projeto em desenvolvimento que será utilizado no meu TCC da ETEC Professor Camargo Aranha sobre o gerenciamento de documentos, para auxiliar no pedido do benefício aduaneiro Drawback. É uma API que gerencia os documentos dos usuários e suas validades. Permiti a criação de usuários e vinculação deles entre si. Possui segurança via JWT e sistema de permissões.
+Projeto em desenvolvimento que será utilizado no meu TCC da ETEC Professor Camargo Aranha sobre o gerenciamento de documentos, para auxiliar no pedido do benefício aduaneiro Drawback. É uma API que gerencia os documentos dos usuários e suas validades. Permite a criação de usuários e vinculação deles entre si. Possui segurança via JWT e sistema de permissões.
 
 ## 🔨 Funcionalidades do projeto
 
